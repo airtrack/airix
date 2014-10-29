@@ -4,7 +4,7 @@
     mov     ds, ax
     mov     es, ax
     mov     ss, ax
-    mov     sp, 0x7c00
+    mov     esp, 0x7c00
     call    load_kernal
     jmp     goto_pm
 
@@ -85,8 +85,87 @@ protected_mode:
     ; Prepare video selector
     mov     ax, 0x18
     mov     gs, ax
+    ; Other selectors
+    mov     ax, 0x10
+    mov     ds, ax
+    mov     es, ax
+    mov     fs, ax
+    mov     ss, ax
+    call    expand_kernal
     ; Jump into kernal
-    jmp     0x8:0x10000
+    jmp     eax
+
+; eax: return value, store entry address
+expand_kernal:
+    push    ebp
+    mov     ebp, esp
+    sub     esp, 12
+
+    ; Kernal file pointer
+    mov     eax, 0x10000
+    ; Entry address
+    mov     ebx, dword [eax + 24]
+    mov     dword [ebp - 4], ebx
+    ; Program head offset
+    mov     ebx, dword [eax + 28]
+    ; Program head size
+    mov     dx, word [eax + 42]
+    mov     word [ebp - 10], dx
+    ; Program head number
+    mov     cx, word [eax + 44]
+
+.expand_all_segments:
+    mov     dword [ebp - 8], ebx
+    mov     word [ebp - 12], cx
+    call    expand_segment
+    mov     ebx, dword [ebp - 8]
+    movzx   edx, word [ebp - 10]
+    add     ebx, edx
+    mov     cx, word [ebp - 12]
+    dec     cx
+    jnz     .expand_all_segments
+
+.expand_kernal_success:
+    ; Entry address as return value
+    mov     eax, dword [ebp - 4]
+    add     esp, 12
+    pop     ebp
+    ret
+
+; eax: elf file buffer pointer
+; ebx: current program head offset
+expand_segment:
+    add     ebx, eax
+    ; Type
+    mov     ecx, dword [ebx]
+    cmp     ecx, 1
+    jz      .expand
+    cmp     ecx, 6
+    jz      .expand
+    jmp     .expand_segment_success
+
+.expand:
+    ; File Offset
+    mov     ecx, dword [ebx + 4]
+    lea     esi, [eax + ecx]
+    ; Virtual address
+    mov     edi, dword [ebx + 8]
+    ; File size
+    mov     ecx, dword [ebx + 16]
+    cld
+    rep     movsb
+    ; Clear remain memroy
+    mov     ecx, dword [ebx + 20]
+    sub     ecx, dword [ebx + 16]
+    jz      .expand_segment_success
+
+.fill_zero:
+    mov     byte [edi], 0
+    inc     edi
+    loop    .fill_zero
+
+.expand_segment_success:
+    ret
 
 gdt_start:
     ; Unused
