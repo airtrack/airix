@@ -1,16 +1,22 @@
+COBJS = start.o
+ASMOBJS = kernal.o
+
 all: bootloader kernal a_img
 
 clean:
 	@ rm -f *.o a.img bootloader.bin kernal.bin
 
 bootloader: bootloader.s
-	nasm bootloader.s -o bootloader.bin
+	nasm $< -o bootloader.bin
 
-kernal: kernal.o
-	ld -m elf_i386 -Ttext-seg=0x100000 kernal.o -s -o kernal.bin
+kernal: $(ASMOBJS) $(COBJS)
+	ld -m elf_i386 -Ttext-seg=0x100000 $(ASMOBJS) $(COBJS) -s -o kernal.bin
 
-kernal.o: kernal.s
-	nasm -felf kernal.s -o kernal.o
+%.o: %.s
+	nasm -felf $< -o $@
+
+%.o: %.c
+	gcc -std=c99 -m32 -c $< -o $@
 
 a_img: bootloader kernal
 	@ dd if=/dev/zero of=a.img bs=512 count=2880 > /dev/null 2>&1
