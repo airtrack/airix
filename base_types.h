@@ -1,5 +1,5 @@
-#ifndef BASETYPES_H
-#define BASETYPES_H
+#ifndef BASE_TYPES_H
+#define BASE_TYPES_H
 
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
@@ -11,4 +11,4 @@ typedef short int16_t;
 typedef int int32_t;
 typedef long long int64_t;
 
-#endif // BASETYPES_H
+#endif // BASE_TYPES_H

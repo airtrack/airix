@@ -4,6 +4,7 @@ extern cstart
 global _start
 global get_gdtr
 global set_gdtr
+global set_idtr
 global display_char
 
 _start:
@@ -22,6 +23,14 @@ set_gdtr:
     mov     ebp, esp
     mov     eax, dword [ebp + 8]
     lgdt    [eax]
+    pop     ebp
+    ret
+
+set_idtr:
+    push    ebp
+    mov     ebp, esp
+    mov     eax, dword [ebp + 8]
+    lidt    [eax]
     pop     ebp
     ret
 
