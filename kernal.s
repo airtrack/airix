@@ -5,33 +5,42 @@ global _start
 global get_gdtr
 global set_gdtr
 global set_idtr
+global in_byte
+global out_byte
 global display_char
 
 _start:
     call    cstart
 
 get_gdtr:
-    push    ebp
-    mov     ebp, esp
-    mov     eax, dword [ebp + 8]
+    mov     eax, dword [esp + 4]
     sgdt    [eax]
-    pop     ebp
     ret
 
 set_gdtr:
-    push    ebp
-    mov     ebp, esp
-    mov     eax, dword [ebp + 8]
+    mov     eax, dword [esp + 4]
     lgdt    [eax]
-    pop     ebp
     ret
 
 set_idtr:
-    push    ebp
-    mov     ebp, esp
-    mov     eax, dword [ebp + 8]
+    mov     eax, dword [esp + 4]
     lidt    [eax]
-    pop     ebp
+    ret
+
+in_byte:
+    mov     edx, dword [esp + 4]
+    xor     eax, eax
+    in      al, dx
+    nop
+    nop
+    ret
+
+out_byte:
+    mov     edx, dword [esp + 4]
+    mov     al, byte [esp + 8]
+    out     dx, al
+    nop
+    nop
     ret
 
 display_char:
