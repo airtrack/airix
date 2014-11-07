@@ -1,5 +1,14 @@
 #include "pic.h"
+#include "gdt.h"
+#include "idt.h"
 #include "klib.h"
+
+static pic_isr_t isr_table[IRQ_NUM];
+static void *isr_entry_table[IRQ_NUM] =
+{
+    isr_entry0,
+    NULL
+};
 
 void init_pic()
 {
@@ -39,7 +48,7 @@ void pic_enable_irq(uint8_t irq_line)
         irq_line -= 8;
     }
 
-    value = in_byte(port) | (1 << irq_line);
+    value = in_byte(port) & ~(1 << irq_line);
     out_byte(port, value);
 }
 
@@ -58,6 +67,27 @@ void pic_disable_irq(uint8_t irq_line)
         irq_line -= 8;
     }
 
-    value = in_byte(port) & ~(1 << irq_line);
+    value = in_byte(port) | (1 << irq_line);
     out_byte(port, value);
+}
+
+static inline void pic_send_eoi()
+{
+    out_byte(PIC_MASTER_CMD_STATUS, PIC_OCW2_EOI);
+}
+
+void pic_interrupt(uint8_t irq_line)
+{
+    isr_table[irq_line]();
+    pic_send_eoi();
+}
+
+void pic_register_isr(uint8_t irq_line, pic_isr_t isr)
+{
+    void *entry = isr_entry_table[irq_line];
+    uint8_t idt_num = PIC_IDT_BASE_NUM + irq_line;
+
+    idt_set_entry(idt_num, GDT_FLAT_MEM_TEXT_SEL, entry, IDT_TYPE_INT, DPL_0);
+    isr_table[irq_line] = isr;
+    pic_enable_irq(irq_line);
 }

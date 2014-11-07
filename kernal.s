@@ -1,5 +1,7 @@
 [bits 32]
 extern cstart
+extern kernal_main
+extern pic_interrupt
 
 global _start
 global get_gdtr
@@ -7,10 +9,14 @@ global set_gdtr
 global set_idtr
 global in_byte
 global out_byte
+global isr_entry0
 global display_char
 
 _start:
     call    cstart
+    mov     esp, 0x10000
+    sti
+    call    kernal_main
 
 get_gdtr:
     mov     eax, dword [esp + 4]
@@ -42,6 +48,14 @@ out_byte:
     nop
     nop
     ret
+
+isr_entry0:
+    pushad
+    push    0
+    call    pic_interrupt
+    add     esp, 4
+    popad
+    iret
 
 display_char:
     push    ebp

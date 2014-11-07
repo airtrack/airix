@@ -1,5 +1,7 @@
 a.img
 bochsout.txt
+.ycm_extra_conf.py
+.ycm_extra_conf.pyc
 *.o
 *.bin
 *.swp

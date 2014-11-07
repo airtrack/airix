@@ -3,6 +3,12 @@
 #include "pic.h"
 #include "klib.h"
 
+void isr_timer()
+{
+    static char c = 0;
+    display_char(20, 10, c++);
+}
+
 /* C entry */
 void cstart()
 {
@@ -10,6 +16,5 @@ void cstart()
     init_idt();
     init_pic();
 
-    for (char c = 0;; ++c)
-        display_char(20, 10, c);
+    pic_register_isr(IRQ0, isr_timer);
 }

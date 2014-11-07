@@ -11,8 +11,9 @@
 #define PIC_ICW1_INIT 0x10
 
 /* Base interrupt numbers */
-#define PIC_ICW2_IRQ0 0x20
-#define PIC_ICW2_IRQ8 0x28
+#define PIC_IDT_BASE_NUM 0x20
+#define PIC_ICW2_IRQ0 PIC_IDT_BASE_NUM
+#define PIC_ICW2_IRQ8 (PIC_IDT_BASE_NUM + 8)
 
 /* x86 architecture uses IRQ line 2 */
 #define PIC_ICW3_MASTER_IRQ_LINE2 0x4 /* 00000100b line 2 */
@@ -23,6 +24,9 @@
 #define PIC_ICW4_MASTER_BUF 0x4
 #define PIC_ICW4_BUFFER_MODE 0x8
 #define PIC_ICW4_SFNM 0x10
+
+/* End of Interrupt(EOI) OCW2 */
+#define PIC_OCW2_EOI 0x20
 
 /* PIC ports */
 #define PIC_MASTER_CMD_STATUS 0x20
@@ -47,6 +51,7 @@
 #define IRQ13 13
 #define IRQ14 14
 #define IRQ15 15
+#define IRQ_NUM 16
 
 /* PIC init function */
 void init_pic();
@@ -54,5 +59,9 @@ void init_pic();
 /* Enable/Disable IRQ line */
 void pic_enable_irq(uint8_t irq_line);
 void pic_disable_irq(uint8_t irq_line);
+
+/* Register ISR(Interrupt Service Routine) */
+typedef void (*pic_isr_t)();
+void pic_register_isr(uint8_t irq_line, pic_isr_t isr);
 
 #endif // PIC_H

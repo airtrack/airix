@@ -1,4 +1,4 @@
-COBJS = start.o gdt.o idt.o pic.o
+COBJS = start.o kernal_main.o gdt.o idt.o pic.o
 ASMOBJS = kernal.o
 
 all: bootloader kernal a_img

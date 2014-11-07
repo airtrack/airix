@@ -30,8 +30,8 @@ typedef struct
 #define GDT_ENTRY_NUM 100
 
 /* GDT selectors */
-#define FLAT_MEM_TEXT_SELECTOR 0x8
-#define FLAT_MEM_DATA_SELECTOR 0x10
+#define GDT_FLAT_MEM_TEXT_SEL 0x8
+#define GDT_FLAT_MEM_DATA_SEL 0x10
 
 /* DPL values */
 #define DPL_0 0
