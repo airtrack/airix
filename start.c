@@ -1,9 +1,10 @@
 #include "gdt.h"
 #include "idt.h"
 #include "pic.h"
+#include "pit.h"
 #include "klib.h"
 
-void isr_timer()
+static void isr_timer()
 {
     static char c = 0;
     display_char(20, 10, c++);
@@ -15,6 +16,7 @@ void cstart()
     init_gdt();
     init_idt();
     init_pic();
+    init_pit(50);
 
     pic_register_isr(IRQ0, isr_timer);
 }
