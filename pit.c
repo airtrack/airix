@@ -3,6 +3,7 @@
 
 void init_pit(uint32_t hz)
 {
+    /* PIT counter 0 valid value range is [2, 65535] */
     uint32_t reload;
     uint32_t remainder;
 
@@ -14,8 +15,10 @@ void init_pit(uint32_t hz)
     /* If remainder more than half, then round up */
     if (remainder > hz / 2)
         ++reload;
-    else if (reload == 0)  /* If hz >>> PIT_BASE_HZ, set 1 to reload */
-        reload = 1;
+
+    /* If hz >>> PIT_BASE_HZ, set 2 to reload(1 is invalid value) */
+    if (reload <= 1)
+        reload = 2;
 
     /* Set reload as 0(means 65536) when reload > PIT_RELOAD_MAX */
     if (reload > PIT_RELOAD_MAX)

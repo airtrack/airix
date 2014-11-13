@@ -7,16 +7,20 @@ clean:
 	@ rm -f *.o a.img bootloader.bin kernal.bin
 
 bootloader: bootloader.s
-	nasm $< -o bootloader.bin
+	@ echo "compiling and linking $< ..."
+	@ nasm $< -o bootloader.bin
 
 kernal: $(ASMOBJS) $(COBJS)
-	ld -m elf_i386 -Ttext-seg=0x100000 $(ASMOBJS) $(COBJS) -s -o kernal.bin
+	@ echo "linking kernal.bin ..."
+	@ ld -m elf_i386 -Ttext-seg=0x100000 $(ASMOBJS) $(COBJS) -s -o kernal.bin
 
 %.o: %.s
-	nasm -felf $< -o $@
+	@ echo "compiling $< ..."
+	@ nasm -felf $< -o $@
 
 %.o: %.c
-	gcc -std=c99 -m32 -Wall -c $< -o $@
+	@ echo "compiling $< ..."
+	@ gcc -std=c99 -m32 -Wall -c $< -o $@
 
 a_img: bootloader kernal
 	@ dd if=/dev/zero of=a.img bs=512 count=2880 > /dev/null 2>&1

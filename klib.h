@@ -11,6 +11,7 @@ uint8_t in_byte(uint16_t port);
 void out_byte(uint16_t port, uint8_t value);
 
 void isr_entry0();
+void isr_entry7();
 
 void display_char(int line, int column, char c);
 

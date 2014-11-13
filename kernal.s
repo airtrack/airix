@@ -10,6 +10,7 @@ global set_idtr
 global in_byte
 global out_byte
 global isr_entry0
+global isr_entry7
 global display_char
 
 _start:
@@ -54,6 +55,27 @@ isr_entry0:
     push    0
     call    pic_interrupt
     add     esp, 4
+    popad
+    iret
+
+isr_entry7:
+    pushad
+    ; Read master PIC IRR(Interrupt Request Register)
+    mov     al, 0x0a
+    out     0x20, al
+    nop
+    nop
+    in      al, 0x20
+    nop
+    nop
+    ; Check bit 7
+    and     al, 0x80
+    ; If it is spurious IRQ, then just ignore it
+    jz      .spurious
+    push    7
+    call    pic_interrupt
+    add     esp, 4
+.spurious:
     popad
     iret
 

@@ -7,8 +7,35 @@ static pic_isr_t isr_table[IRQ_NUM];
 static void *isr_entry_table[IRQ_NUM] =
 {
     isr_entry0,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    isr_entry7,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
     NULL
 };
+
+static inline void pic_register_isr_entry(uint8_t irq_line)
+{
+    void *entry = isr_entry_table[irq_line];
+    uint8_t idt_num = PIC_IDT_BASE_NUM + irq_line;
+    idt_set_entry(idt_num, GDT_FLAT_MEM_TEXT_SEL, entry, IDT_TYPE_INT, DPL_0);
+}
+
+static void pic_register_isr_entries()
+{
+    pic_register_isr_entry(IRQ0);
+    pic_register_isr_entry(IRQ7);
+}
 
 void init_pic()
 {
@@ -31,6 +58,8 @@ void init_pic()
     /* Disable all interrupts */
     out_byte(PIC_MASTER_IMR_DATA, 0xFF);
     out_byte(PIC_SLAVE_IMR_DATA, 0xFF);
+
+    pic_register_isr_entries();
 }
 
 void pic_enable_irq(uint8_t irq_line)
@@ -84,10 +113,6 @@ void pic_interrupt(uint8_t irq_line)
 
 void pic_register_isr(uint8_t irq_line, pic_isr_t isr)
 {
-    void *entry = isr_entry_table[irq_line];
-    uint8_t idt_num = PIC_IDT_BASE_NUM + irq_line;
-
-    idt_set_entry(idt_num, GDT_FLAT_MEM_TEXT_SEL, entry, IDT_TYPE_INT, DPL_0);
     isr_table[irq_line] = isr;
     pic_enable_irq(irq_line);
 }
