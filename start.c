@@ -11,7 +11,7 @@ static void isr_timer()
 }
 
 /* C entry */
-void cstart()
+void cstart(void *mm)
 {
     init_gdt();
     init_idt();
@@ -19,4 +19,5 @@ void cstart()
     init_pit(50);
 
     pic_register_isr(IRQ0, isr_timer);
+    display_char(20, 5, *(int *)mm + '0');
 }

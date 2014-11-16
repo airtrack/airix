@@ -14,6 +14,7 @@ global isr_entry7
 global display_char
 
 _start:
+    push    ebx
     call    cstart
     mov     esp, 0x10000
     sti

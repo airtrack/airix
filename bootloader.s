@@ -5,8 +5,43 @@
     mov     es, ax
     mov     ss, ax
     mov     esp, 0x7c00
+    call    get_memory_map
     call    load_kernal
     jmp     goto_pm
+
+get_memory_map:
+    mov     di, 0x7e00
+    mov     dword [es:di], 0
+    add     di, 4
+    xor     ebx, ebx
+
+.getting_mm:
+    ; Call int 0x15 0xe820 function, edx = 'SMAP'
+    mov     edx, 0x534d4150
+    mov     eax, 0xe820
+    mov     ecx, 24
+    int     0x15
+
+    ; Check result
+    jc      .get_mm_error
+    cmp     eax, 0x534d4150
+    jne     .get_mm_error
+    jecxz   .skip_entry
+    ; Get entry success
+    add     di, 24
+    inc     dword [es:0x7e00]
+
+.skip_entry:
+    ; There is no more entry when ebx == 0
+    cmp     ebx, 0
+    je      .get_mm_done
+    jmp     .getting_mm
+
+.get_mm_error:
+    hlt
+
+.get_mm_done:
+    ret
 
 load_kernal:
     push    bp
@@ -92,6 +127,8 @@ protected_mode:
     mov     fs, ax
     mov     ss, ax
     call    expand_kernal
+    ; Set address of memory map to ebx
+    mov     ebx, 0x7e00
     ; Jump into kernal
     jmp     eax
 
@@ -154,7 +191,7 @@ expand_segment:
     mov     ecx, dword [ebx + 16]
     cld
     rep     movsb
-    ; Clear remain memroy
+    ; Clear remain memory
     mov     ecx, dword [ebx + 20]
     sub     ecx, dword [ebx + 16]
     jz      .expand_segment_success
