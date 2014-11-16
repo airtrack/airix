@@ -41,4 +41,4 @@ a_img: bootloader kernal
 	@ echo "making $(A_IMG) ..."
 	@ dd if=/dev/zero of=$(A_IMG) bs=512 count=2880 > /dev/null 2>&1
 	@ dd if=$(BIN_DIR)/$(BOOTLOADER_BIN) of=$(A_IMG) conv=notrunc bs=512 count=1 > /dev/null 2>&1
-	@ dd if=$(BIN_DIR)/$(KERNAL_BIN) of=a.img seek=512 conv=notrunc bs=1 > /dev/null 2>&1
+	@ dd if=$(BIN_DIR)/$(KERNAL_BIN) of=$(A_IMG) seek=512 conv=notrunc bs=1 > /dev/null 2>&1
