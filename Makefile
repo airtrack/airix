@@ -6,17 +6,20 @@ BIN_DIR = bin
 BOOTLOADER_ASM = $(wildcard bootloader/*.s)
 BOOTLOADER_BIN = bootloader.bin
 
-KERNAL_C = $(wildcard kernal/*.c)
+KERNAL_C = $(wildcard kernal/*.c) $(wildcard mm/*.c)
 KERNAL_ASM = $(wildcard kernal/*.s)
 
 KERNAL_COBJS = $(subst .c,.o,$(KERNAL_C))
 KERNAL_ASMOBJS = $(subst .s,.o,$(KERNAL_ASM))
 KERNAL_BIN = kernal.bin
 
+INCLUDE = -I.
+CFLAGS = -std=c99 -m32 -Wall $(INCLUDE)
+
 all: dir bootloader kernal a_img
 
 clean:
-	@ rm -f kernal/*.o $(BIN_DIR)/* $(A_IMG)
+	@ rm -f kernal/*.o mm/*.o $(BIN_DIR)/* $(A_IMG)
 
 dir:
 	@ mkdir -p $(BIN_DIR)
@@ -35,7 +38,7 @@ $(KERNAL_ASMOBJS) : %.o : %.s
 
 $(KERNAL_COBJS) : %.o : %.c
 	@ echo "compiling $< ..."
-	@ gcc -std=c99 -m32 -Wall -c $< -o $@
+	@ gcc $(CFLAGS) -c $< -o $@
 
 a_img: bootloader kernal
 	@ echo "making $(A_IMG) ..."

@@ -3,6 +3,7 @@
 #include "pic.h"
 #include "pit.h"
 #include "klib.h"
+#include "mm/pmm.h"
 
 static void isr_timer()
 {
@@ -17,7 +18,7 @@ void cstart(void *mm)
     init_idt();
     init_pic();
     init_pit(50);
+    init_pmm((memory_map_entry_t *)((uint32_t *)mm + 1), *(uint32_t *)mm);
 
     pic_register_isr(IRQ0, isr_timer);
-    display_char(20, 5, *(int *)mm + '0');
 }
