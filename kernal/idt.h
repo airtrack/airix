@@ -1,7 +1,7 @@
 #ifndef IDT_H
 #define IDT_H
 
-#include "base_types.h"
+#include <kernal/base_types.h>
 
 #pragma pack(push, 1)
 

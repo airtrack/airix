@@ -1,5 +1,5 @@
-#include "pmm.h"
-#include "kernal/klib.h"
+#include <mm/pmm.h>
+#include <kernal/klib.h>
 
 void init_pmm(memory_map_entry_t *entries, uint32_t num)
 {

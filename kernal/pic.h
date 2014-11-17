@@ -1,7 +1,7 @@
 #ifndef PIC_H
 #define PIC_H
 
-#include "base_types.h"
+#include <kernal/base_types.h>
 
 /* Initialization Control Words */
 #define PIC_ICW1_EXPECT_ICW4 0x1

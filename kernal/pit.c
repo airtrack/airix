@@ -1,5 +1,5 @@
-#include "pit.h"
-#include "klib.h"
+#include <kernal/pit.h>
+#include <kernal/klib.h>
 
 void init_pit(uint32_t hz)
 {

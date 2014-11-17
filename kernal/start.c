@@ -1,9 +1,9 @@
-#include "gdt.h"
-#include "idt.h"
-#include "pic.h"
-#include "pit.h"
-#include "klib.h"
-#include "mm/pmm.h"
+#include <kernal/gdt.h>
+#include <kernal/idt.h>
+#include <kernal/pic.h>
+#include <kernal/pit.h>
+#include <kernal/klib.h>
+#include <mm/pmm.h>
 
 static void isr_timer()
 {

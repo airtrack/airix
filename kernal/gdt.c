@@ -1,5 +1,5 @@
-#include "gdt.h"
-#include "klib.h"
+#include <kernal/gdt.h>
+#include <kernal/klib.h>
 
 /* GDT */
 static gdt_entry_t gdt[GDT_ENTRY_NUM];

@@ -1,7 +1,7 @@
 #ifndef KLIB_H
 #define KLIB_H
 
-#include "base_types.h"
+#include <kernal/base_types.h>
 
 void get_gdtr(void *gdtr);
 void set_gdtr(const void *gdtr);
