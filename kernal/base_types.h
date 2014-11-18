@@ -13,4 +13,6 @@ typedef short int16_t;
 typedef int int32_t;
 typedef long long int64_t;
 
+typedef uint32_t size_t;
+
 #endif // BASE_TYPES_H

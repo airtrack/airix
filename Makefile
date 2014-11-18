@@ -7,19 +7,19 @@ BOOTLOADER_ASM = $(wildcard bootloader/*.s)
 BOOTLOADER_BIN = bootloader.bin
 
 KERNAL_C = $(wildcard kernal/*.c) $(wildcard mm/*.c)
-KERNAL_ASM = $(wildcard kernal/*.s)
+KERNAL_ASM = $(wildcard kernal/*.s) $(wildcard lib/*.s)
 
 KERNAL_COBJS = $(subst .c,.o,$(KERNAL_C))
 KERNAL_ASMOBJS = $(subst .s,.o,$(KERNAL_ASM))
 KERNAL_BIN = kernal.bin
 
 INCLUDE = -I.
-CFLAGS = -std=c99 -m32 -Wall $(INCLUDE)
+CFLAGS = -std=c99 -m32 -Wall -fno-builtin $(INCLUDE)
 
 all: dir bootloader kernal a_img
 
 clean:
-	@ rm -f kernal/*.o mm/*.o $(BIN_DIR)/* $(A_IMG)
+	@ rm -f kernal/*.o mm/*.o lib/*.o $(BIN_DIR)/* $(A_IMG)
 
 dir:
 	@ mkdir -p $(BIN_DIR)
