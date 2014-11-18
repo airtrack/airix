@@ -6,7 +6,7 @@ BIN_DIR = bin
 BOOTLOADER_ASM = $(wildcard bootloader/*.s)
 BOOTLOADER_BIN = bootloader.bin
 
-KERNAL_C = $(wildcard kernal/*.c) $(wildcard mm/*.c)
+KERNAL_C = $(wildcard kernal/*.c) $(wildcard mm/*.c) $(wildcard lib/*.c)
 KERNAL_ASM = $(wildcard kernal/*.s) $(wildcard lib/*.s)
 
 KERNAL_COBJS = $(subst .c,.o,$(KERNAL_C))
