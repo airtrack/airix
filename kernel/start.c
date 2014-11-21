@@ -1,8 +1,8 @@
-#include <kernal/gdt.h>
-#include <kernal/idt.h>
-#include <kernal/pic.h>
-#include <kernal/pit.h>
-#include <kernal/klib.h>
+#include <kernel/gdt.h>
+#include <kernel/idt.h>
+#include <kernel/pic.h>
+#include <kernel/pit.h>
+#include <kernel/klib.h>
 #include <mm/pmm.h>
 
 static void isr_timer()

@@ -1,5 +1,5 @@
-#include <kernal/idt.h>
-#include <kernal/klib.h>
+#include <kernel/idt.h>
+#include <kernel/klib.h>
 
 /* IDT */
 static idt_entry_t idt[IDT_ENTRY_NUM];

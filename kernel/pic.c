@@ -1,7 +1,7 @@
-#include <kernal/pic.h>
-#include <kernal/gdt.h>
-#include <kernal/idt.h>
-#include <kernal/klib.h>
+#include <kernel/pic.h>
+#include <kernel/gdt.h>
+#include <kernel/idt.h>
+#include <kernel/klib.h>
 
 static pic_isr_t isr_table[IRQ_NUM];
 static void *isr_entry_table[IRQ_NUM] =

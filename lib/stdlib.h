@@ -1,7 +1,7 @@
 #ifndef STDLIB_H
 #define STDLIB_H
 
-#include <kernal/base_types.h>
+#include <kernel/base_types.h>
 
 /* Sort an array of n objects, the initial member of which is
  * pointed to by base, the size of each object is specified by width.

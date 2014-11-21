@@ -1,4 +1,4 @@
-#include <kernal/base_types.h>
+#include <kernel/base_types.h>
 #include <lib/string.h>
 
 static void swap(void *left, void *right, size_t n)

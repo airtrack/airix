@@ -6,7 +6,7 @@
     mov     ss, ax
     mov     esp, 0x7c00
     call    get_memory_map
-    call    load_kernal
+    call    load_kernel
     jmp     goto_pm
 
 get_memory_map:
@@ -43,7 +43,7 @@ get_memory_map:
 .get_mm_done:
     ret
 
-load_kernal:
+load_kernel:
     push    bp
     mov     bp, sp
     sub     sp, 4
@@ -126,19 +126,19 @@ protected_mode:
     mov     es, ax
     mov     fs, ax
     mov     ss, ax
-    call    expand_kernal
+    call    expand_kernel
     ; Set address of memory map to ebx
     mov     ebx, 0x7e00
-    ; Jump into kernal
+    ; Jump into kernel
     jmp     eax
 
 ; eax: return value, store entry address
-expand_kernal:
+expand_kernel:
     push    ebp
     mov     ebp, esp
     sub     esp, 12
 
-    ; Kernal file pointer
+    ; Kernel file pointer
     mov     eax, 0x10000
     ; Entry address
     mov     ebx, dword [eax + 24]
@@ -162,7 +162,7 @@ expand_kernal:
     dec     cx
     jnz     .expand_all_segments
 
-.expand_kernal_success:
+.expand_kernel_success:
     ; Entry address as return value
     mov     eax, dword [ebp - 4]
     add     esp, 12

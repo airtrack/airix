@@ -1,7 +1,7 @@
 #ifndef PIT_H
 #define PIT_H
 
-#include <kernal/base_types.h>
+#include <kernel/base_types.h>
 
 /* PIT channels */
 #define PIT_CHANNEL_0 0x0

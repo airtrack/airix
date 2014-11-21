@@ -1,6 +1,6 @@
 [bits 32]
 extern cstart
-extern kernal_main
+extern kernel_main
 extern pic_interrupt
 
 global _start
@@ -18,7 +18,7 @@ _start:
     call    cstart
     mov     esp, 0x10000
     sti
-    call    kernal_main
+    call    kernel_main
 
 get_gdtr:
     mov     eax, dword [esp + 4]
