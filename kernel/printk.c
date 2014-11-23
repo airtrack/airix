@@ -46,6 +46,14 @@ static void put_char(uint8_t color, uint8_t c)
             }
             break;
     }
+
+    /* Scroll up */
+    if (cursor_y >= LINE)
+    {
+        memcpy(video_memory, video_memory + 1 * COLUMN,
+                sizeof(*video_memory) * LINE * COLUMN);
+        cursor_y = LINE - 1;
+    }
 }
 
 void clear_screen()
@@ -80,19 +88,13 @@ static void reverse(char *buf, int len)
     }
 }
 
-static bool itoa_s(int i, unsigned int base, char *buf, int len)
+static bool utoa_s(unsigned int v, unsigned int base, char *buf, int len)
 {
     char data[32];
     int data_len = 0;
-    unsigned int v;
 
     if (base > 16 || base < 2)
         return false;
-
-    if (base == 10 && i < 0)
-        v = -i;
-    else
-        v = i;
 
     /* Convert to string */
     do
@@ -105,29 +107,49 @@ static bool itoa_s(int i, unsigned int base, char *buf, int len)
             data[data_len++] = 'A' + r - 10;
     } while (v != 0);
 
-    /* Reverse it */
-    reverse(data, data_len);
-
-    if (base == 10 && i < 0)
-    {
-        if (len < data_len + 2)
-            return false;
-        *buf++ = '-';
-        --len;
-    }
-
     if (len < data_len + 1)
         return false;
+
+    /* Reverse it */
+    reverse(data, data_len);
 
     memcpy(buf, data, data_len);
     buf[data_len] = '\0';
     return true;
 }
 
-static void print_int(int i, unsigned int base)
+static bool itoa_s(int i, unsigned int base, char *buf, int len)
+{
+    unsigned int v;
+
+    if (base == 10 && i < 0)
+    {
+        v = -i;
+        if (utoa_s(v, base, buf + 1, len - 1))
+        {
+            *buf = '-';
+            return true;
+        }
+        return false;
+    }
+    else
+    {
+        v = i;
+        return utoa_s(v, base, buf, len);
+    }
+}
+
+static inline void print_int(int i, unsigned int base)
 {
     char str[33];
     if (itoa_s(i, base, str, sizeof(str)))
+        print_string(str);
+}
+
+static inline void print_uint(unsigned int i, unsigned int base)
+{
+    char str[33];
+    if (utoa_s(i, base, str, sizeof(str)))
         print_string(str);
 }
 
@@ -156,6 +178,10 @@ void printk(const char *fmt, ...)
                     break;
                 case 'x':
                     print_int(va_arg(ap, int), 16);
+                    ++fmt;
+                    break;
+                case 'u':
+                    print_uint(va_arg(ap, unsigned int), 10);
                     ++fmt;
                     break;
                 case '%':
