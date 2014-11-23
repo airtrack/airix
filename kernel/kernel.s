@@ -9,9 +9,10 @@ global set_gdtr
 global set_idtr
 global in_byte
 global out_byte
+global close_int
+global start_int
 global isr_entry0
 global isr_entry7
-global display_char
 
 _start:
     push    ebx
@@ -51,6 +52,14 @@ out_byte:
     nop
     ret
 
+close_int:
+    cli
+    ret
+
+start_int:
+    sti
+    ret
+
 isr_entry0:
     pushad
     push    0
@@ -79,16 +88,3 @@ isr_entry7:
 .spurious:
     popad
     iret
-
-display_char:
-    push    ebp
-    mov     ebp, esp
-    mov     ebx, dword [ebp + 8]
-    imul    ebx, 80
-    add     ebx, dword [ebp + 12]
-    imul    ebx, 2
-    mov     ah, 0x0F
-    mov     al, byte [ebp + 16]
-    mov     [gs:ebx], ax
-    pop     ebp
-    ret

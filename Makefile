@@ -14,7 +14,7 @@ KERNEL_ASMOBJS = $(subst .s,.o,$(KERNEL_ASM))
 KERNEL_BIN = kernel.bin
 
 INCLUDE = -I.
-CFLAGS = -std=c99 -m32 -Wall -fno-builtin $(INCLUDE)
+CFLAGS = -std=c99 -m32 -Wall -fno-builtin -fno-stack-protector $(INCLUDE)
 
 all: dir bootloader kernel a_img
 
