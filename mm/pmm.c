@@ -2,18 +2,18 @@
 #include <kernel/klib.h>
 #include <lib/stdlib.h>
 
-static int memory_map_entry_compare(const void *left, const void *right)
+static int mmap_entry_compare(const void *left, const void *right)
 {
-    const memory_map_entry_t *l = (const memory_map_entry_t *)left;
-    const memory_map_entry_t *r = (const memory_map_entry_t *)right;
+    const struct mmap_entry *l = (const struct mmap_entry *)left;
+    const struct mmap_entry *r = (const struct mmap_entry *)right;
     if (l->base < r->base) return -1;
     else if (l->base == r->base) return 0;
     else return 1;
 }
 
-void init_pmm(memory_map_entry_t *entries, uint32_t num)
+void init_pmm(struct mmap_entry *entries, uint32_t num)
 {
-    qsort(entries, num, sizeof(*entries), memory_map_entry_compare);
+    qsort(entries, num, sizeof(*entries), mmap_entry_compare);
 
     for (uint32_t i = 0; i < num; ++i)
     {

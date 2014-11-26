@@ -5,12 +5,19 @@
 #include <kernel/klib.h>
 #include <mm/pmm.h>
 
+struct boot_info
+{
+    void *kernel_end;
+    uint32_t num_mmap_entries;
+    struct mmap_entry mmap_entries[1];
+};
+
 static void isr_timer()
 {
 }
 
 /* C entry */
-void cstart(void *mm)
+void cstart(struct boot_info *bi)
 {
     clear_screen();
     printk("Init kernel ...\n");
@@ -19,7 +26,7 @@ void cstart(void *mm)
     init_idt();
     init_pic();
     init_pit(50);
-    init_pmm((memory_map_entry_t *)((uint32_t *)mm + 1), *(uint32_t *)mm);
+    init_pmm(bi->mmap_entries, bi->num_mmap_entries);
 
     pic_register_isr(IRQ0, isr_timer);
     printk("Success!\n");

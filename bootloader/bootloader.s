@@ -10,7 +10,7 @@
     jmp     goto_pm
 
 get_memory_map:
-    mov     di, 0x7e00
+    mov     di, 0x7e04
     mov     dword [es:di], 0
     add     di, 4
     xor     ebx, ebx
@@ -29,7 +29,7 @@ get_memory_map:
     jecxz   .skip_entry
     ; Get entry success
     add     di, 24
-    inc     dword [es:0x7e00]
+    inc     dword [es:0x7e04]
 
 .skip_entry:
     ; There is no more entry when ebx == 0
@@ -127,7 +127,10 @@ protected_mode:
     mov     fs, ax
     mov     ss, ax
     call    expand_kernel
-    ; Set address of memory map to ebx
+    ; Store address of information which is passed to the kernel
+    ; | 0x7e00: the end address of expanded kernel
+    ; | 0x7e04: number of memory map entries
+    ; | 0x7e08: start address of memory map entries
     mov     ebx, 0x7e00
     ; Jump into kernel
     jmp     eax
@@ -162,7 +165,9 @@ expand_kernel:
     dec     cx
     jnz     .expand_all_segments
 
-.expand_kernel_success:
+    ; Expand kernel success
+    ; Store the end address of expanded kernel
+    mov     dword [0x7e00], edi
     ; Entry address as return value
     mov     eax, dword [ebp - 4]
     add     esp, 12
