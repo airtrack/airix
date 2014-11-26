@@ -1,5 +1,5 @@
 [bits 32]
-extern cstart
+extern init_kernel
 extern kernel_main
 extern pic_interrupt
 
@@ -16,7 +16,7 @@ global isr_entry7
 
 _start:
     push    ebx
-    call    cstart
+    call    init_kernel
     mov     esp, 0x10000
     sti
     call    kernel_main

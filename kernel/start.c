@@ -16,8 +16,8 @@ static void isr_timer()
 {
 }
 
-/* C entry */
-void cstart(struct boot_info *bi)
+/* Init kernel */
+void init_kernel(struct boot_info *bi)
 {
     clear_screen();
     printk("Init kernel ...\n");
@@ -26,7 +26,7 @@ void cstart(struct boot_info *bi)
     init_idt();
     init_pic();
     init_pit(50);
-    init_pmm(bi->mmap_entries, bi->num_mmap_entries);
+    init_pmm(bi->kernel_end, bi->mmap_entries, bi->num_mmap_entries);
 
     pic_register_isr(IRQ0, isr_timer);
     printk("Success!\n");

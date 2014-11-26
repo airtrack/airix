@@ -24,6 +24,6 @@ struct mmap_entry
 #define PMM_MM_ENTRY_TYPE_BAD 5
 
 /* PMM init function */
-void init_pmm(struct mmap_entry *entries, uint32_t num);
+void init_pmm(void *free_mem, struct mmap_entry *entries, uint32_t num);
 
 #endif // PMM_H
