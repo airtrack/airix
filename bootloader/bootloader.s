@@ -218,21 +218,21 @@ gdt_start:
     dw      0x0
     db      0x0
     db      0x9a
-    db      0xC0
+    db      0xCF
     db      0x0
     ; Data descriptor
     dw      0xFFFF
     dw      0x0
     db      0x0
     db      0x92
-    db      0xC0
+    db      0xCF
     db      0x0
     ; Video descriptor
     dw      0xFFFF
     dw      0x8000
     db      0x0B
     db      0x92
-    db      0xC0
+    db      0xCF
     db      0x0
 gdt_len equ $ - gdt_start
 
