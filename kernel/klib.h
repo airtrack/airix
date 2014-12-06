@@ -13,10 +13,14 @@ void out_byte(uint16_t port, uint8_t value);
 void close_int();
 void start_int();
 
+void halt();
+
 void isr_entry0();
 void isr_entry7();
 
 void clear_screen();
 void printk(const char *fmt, ...);
+
+void panic(const char *fmt, ...);
 
 #endif // KLIB_H

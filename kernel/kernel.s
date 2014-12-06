@@ -11,6 +11,7 @@ global in_byte
 global out_byte
 global close_int
 global start_int
+global halt
 global isr_entry0
 global isr_entry7
 
@@ -59,6 +60,9 @@ close_int:
 start_int:
     sti
     ret
+
+halt:
+    hlt
 
 isr_entry0:
     pushad
