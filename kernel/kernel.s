@@ -12,6 +12,7 @@ global out_byte
 global close_int
 global start_int
 global halt
+global enable_paging
 global isr_entry0
 global isr_entry7
 
@@ -63,6 +64,15 @@ start_int:
 
 halt:
     hlt
+
+enable_paging:
+    mov     eax, dword [esp + 4]
+    mov     cr3, eax
+
+    mov     eax, cr0
+    or      eax, 0x80000000
+    mov     cr0, eax
+    ret
 
 isr_entry0:
     pushad

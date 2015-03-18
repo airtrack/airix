@@ -4,6 +4,7 @@
 #include <kernel/pit.h>
 #include <kernel/klib.h>
 #include <mm/pmm.h>
+#include <mm/paging.h>
 
 struct boot_info
 {
@@ -27,6 +28,7 @@ void init_kernel(struct boot_info *bi)
     init_pic();
     init_pit(50);
     init_pmm(bi->kernel_end, bi->mmap_entries, bi->num_mmap_entries);
+    init_paging();
 
     pic_register_isr(IRQ0, isr_timer);
     printk("Success!\n");

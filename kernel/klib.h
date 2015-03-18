@@ -15,6 +15,8 @@ void start_int();
 
 void halt();
 
+void enable_paging(void *page_directory);
+
 void isr_entry0();
 void isr_entry7();
 
