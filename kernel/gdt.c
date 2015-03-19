@@ -5,12 +5,12 @@
 static gdt_entry_t gdt[GDT_ENTRY_NUM];
 
 /* GDTR */
-static gdtr_t gdtr = { sizeof(gdt) - 1, gdt };
+static struct gdtr gdtr = { sizeof(gdt) - 1, gdt };
 
 void init_gdt()
 {
     int num_entries;
-    gdtr_t old_gdtr;
+    struct gdtr old_gdtr;
 
     /* Change GDT and GDTR */
     get_gdtr(&old_gdtr);

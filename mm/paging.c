@@ -36,12 +36,16 @@ void init_paging()
 
     /* Alloc the page directory */
     page_root = alloc_page_address();
+    if (!page_root)
+        panic("Insufficient memory for page directory.");
 
     for (uint32_t i = 0; i < NUM_PDE; ++i)
         page_root->entries[i] = PAGE_READ_WRITE;
 
     /* Alloc first page table */
     first_table = alloc_page_address();
+    if (!first_table)
+        panic("Insufficient memory for first page table.");
 
     for (uint32_t i = 0; i < NUM_PTE; ++i)
         first_table->entries[i] = (i * 0x1000) | PAGE_READ_WRITE | PAGE_PRESENT;

@@ -18,11 +18,11 @@ typedef struct
 } gdt_entry_t;
 
 /* GDTR register data */
-typedef struct
+struct gdtr
 {
     uint16_t limit;
     gdt_entry_t *base;
-} gdtr_t;
+};
 
 #pragma pack(pop)
 

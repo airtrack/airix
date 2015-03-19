@@ -6,21 +6,21 @@
 #pragma pack(push, 1)
 
 /* IDT entry */
-typedef struct
+struct idt_entry
 {
     uint16_t offset_0;
     uint16_t selector;
     uint8_t zero;
     uint8_t type_attr;
     uint16_t offset_1;
-} idt_entry_t;
+};
 
 /* IDTR register data */
-typedef struct
+struct idtr
 {
     uint16_t limit;
-    idt_entry_t *base;
-} idtr_t;
+    struct idt_entry *base;
+};
 
 #pragma pack(pop)
 
