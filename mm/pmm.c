@@ -285,7 +285,7 @@ void init_pmm(void *free_addr, struct mmap_entry *entries, uint32_t num)
     qsort(entries, num, sizeof(*entries), mmap_entry_compare);
     for (uint32_t i = 0; i < num; ++i)
     {
-        printk("%d: 0x%x - 0x%x %d %d 0x%x\n", i, entries[i].base,
+        printk("%d: %p - %p %d %d 0x%x\n", i, entries[i].base,
                 (char *)entries[i].base + entries[i].length,
                 entries[i].length, entries[i].type, entries[i].acpi_attr);
     }

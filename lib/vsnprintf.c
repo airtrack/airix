@@ -117,6 +117,8 @@ int vsnprintf(char *str, size_t size, const char *fmt, va_list ap)
                     cur += snprint_int(cur, end - cur, va_arg(ap, int), 10);
                     ++fmt;
                     break;
+                case 'p':
+                    cur += copy_str(cur, "0x", end - cur);
                 case 'x':
                     cur += snprint_int(cur, end - cur, va_arg(ap, int), 16);
                     ++fmt;
