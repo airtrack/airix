@@ -2,6 +2,7 @@
 #include <kernel/idt.h>
 #include <kernel/pic.h>
 #include <kernel/pit.h>
+#include <kernel/exception.h>
 #include <kernel/klib.h>
 #include <mm/pmm.h>
 #include <mm/paging.h>
@@ -29,6 +30,7 @@ void init_kernel(struct boot_info *bi)
     init_pit(50);
     init_pmm(bi->kernel_end, bi->mmap_entries, bi->num_mmap_entries);
     init_paging();
+    init_exception_handle();
 
     pic_register_isr(IRQ0, isr_timer);
     printk("Success!\n");
