@@ -15,4 +15,9 @@ typedef long long int64_t;
 
 typedef uint32_t size_t;
 
+typedef uint32_t physical_addr_t;
+
+#define KERNEL_BASE 0xC0000000
+#define VIRTUAL_TO_PHYSICAL(vaddr) (vaddr - KERNEL_BASE)
+
 #endif // BASE_TYPES_H

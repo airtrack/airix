@@ -8,15 +8,6 @@
 #define PAGE_FLAG_USED 0x1
 #define PAGE_FLAG_LOCK 0x2
 
-#define ALIGN_ADDRESS(addr) \
-    (void *)((((uint32_t)addr - 1) / MEM_ALIGNMENT + 1) * MEM_ALIGNMENT)
-
-#define ALIGN_SIZE(size) \
-    (((size - 1) / MEM_ALIGNMENT + 1) * MEM_ALIGNMENT)
-
-#define ALIGN_PAGE_ADDRESS(addr) \
-    (void *)((((uint32_t)addr - 1) / PAGE_SIZE + 1) * PAGE_SIZE)
-
 /* Allocator provide memory allocation before MM initialized.
  * Only support memory alloc, do not support memory free. */
 struct boot_allocator

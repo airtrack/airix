@@ -41,7 +41,9 @@ global security_exception_entry
 
 _start:
     push    ebx
-    call    init_kernel
+    mov     eax, init_kernel
+    sub     eax, 0xC0000000
+    call    eax
     mov     esp, 0x10000
     sti
     call    kernel_main
@@ -108,7 +110,7 @@ isr_entry0:
 isr_entry7:
     pushad
     ; Read master PIC IRR(Interrupt Request Register)
-    mov     al, 0x0a
+    mov     al, 0x0A
     out     0x20, al
     nop
     nop

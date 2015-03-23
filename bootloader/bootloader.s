@@ -1,35 +1,41 @@
+%define SMAP 0x534D4150
+%define BOOT_ADDRESS 0x7C00
+%define BOOT_INFO_ADDRESS 0x7E00
+%define NUM_MMAP_ADDRESS 0x7E04
+%define KERNEL_BASE 0xC0000000
+
 [bits 16]
-    org     0x7c00
+    org     BOOT_ADDRESS
     mov     ax, cs
     mov     ds, ax
     mov     es, ax
     mov     ss, ax
-    mov     esp, 0x7c00
+    mov     esp, BOOT_ADDRESS
     call    get_memory_map
     call    load_kernel
     jmp     goto_pm
 
 get_memory_map:
-    mov     di, 0x7e04
+    mov     di, NUM_MMAP_ADDRESS
     mov     dword [es:di], 0
     add     di, 4
     xor     ebx, ebx
 
 .getting_mm:
-    ; Call int 0x15 0xe820 function, edx = 'SMAP'
-    mov     edx, 0x534d4150
-    mov     eax, 0xe820
+    ; Call int 0x15 0xE820 function, edx = 'SMAP'
+    mov     edx, SMAP
+    mov     eax, 0xE820
     mov     ecx, 24
     int     0x15
 
     ; Check result
     jc      .get_mm_error
-    cmp     eax, 0x534d4150
+    cmp     eax, SMAP
     jne     .get_mm_error
     jecxz   .skip_entry
     ; Get entry success
     add     di, 24
-    inc     dword [es:0x7e04]
+    inc     dword [es:NUM_MMAP_ADDRESS]
 
 .skip_entry:
     ; There is no more entry when ebx == 0
@@ -128,10 +134,10 @@ protected_mode:
     mov     ss, ax
     call    expand_kernel
     ; Store address of information which is passed to the kernel
-    ; | 0x7e00: the end address of expanded kernel
-    ; | 0x7e04: number of memory map entries
-    ; | 0x7e08: start address of memory map entries
-    mov     ebx, 0x7e00
+    ; | 0x7E00: the end address of expanded kernel
+    ; | 0x7E04: number of memory map entries
+    ; | 0x7E08: start address of memory map entries
+    mov     ebx, BOOT_INFO_ADDRESS
     ; Jump into kernel
     jmp     eax
 
@@ -167,9 +173,10 @@ expand_kernel:
 
     ; Expand kernel success
     ; Store the end address of expanded kernel
-    mov     dword [0x7e00], edi
+    mov     dword [BOOT_INFO_ADDRESS], edi
     ; Entry address as return value
     mov     eax, dword [ebp - 4]
+    sub     eax, KERNEL_BASE
     add     esp, 12
     pop     ebp
     ret
@@ -192,6 +199,7 @@ expand_segment:
     lea     esi, [eax + ecx]
     ; Virtual address
     mov     edi, dword [ebx + 8]
+    sub     edi, KERNEL_BASE
     ; File size
     mov     ecx, dword [ebx + 16]
     cld
@@ -241,4 +249,4 @@ gdtr:
     dd     gdt_start
 
     times   510 - ($ - $$) db 0
-    dw      0xaa55
+    dw      0xAA55

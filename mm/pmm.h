@@ -29,6 +29,18 @@ struct mmap_entry
 #define PAGE_NUMBER(addr) ((uint32_t)(addr) / PAGE_SIZE)
 #define PAGE_ADDRESS(page_num) (void *)((page_num) * PAGE_SIZE)
 
+#define ALIGN_ADDRESS(addr) \
+    (void *)((((uint32_t)addr - 1) / MEM_ALIGNMENT + 1) * MEM_ALIGNMENT)
+
+#define ALIGN_SIZE(size) \
+    (((size - 1) / MEM_ALIGNMENT + 1) * MEM_ALIGNMENT)
+
+#define ALIGN_PAGE(addr) \
+    ((((uint32_t)addr - 1) / PAGE_SIZE + 1) * PAGE_SIZE)
+
+#define ALIGN_PAGE_ADDRESS(addr) \
+    (void *)ALIGN_PAGE(addr)
+
 /* PMM init function */
 void init_pmm(void *free_addr, struct mmap_entry *entries, uint32_t num);
 

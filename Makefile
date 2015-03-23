@@ -30,7 +30,7 @@ bootloader: $(BOOTLOADER_ASM)
 
 kernel: $(KERNEL_ASMOBJS) $(KERNEL_COBJS)
 	@ echo "linking $(BIN_DIR)/$(KERNEL_BIN) ..."
-	@ ld -m elf_i386 -Ttext-seg=0x100000 $(KERNEL_ASMOBJS) $(KERNEL_COBJS) -s -o $(BIN_DIR)/$(KERNEL_BIN)
+	@ ld -m elf_i386 -Ttext-seg=0xC0100000 $(KERNEL_ASMOBJS) $(KERNEL_COBJS) -s -o $(BIN_DIR)/$(KERNEL_BIN)
 
 $(KERNEL_ASMOBJS) : %.o : %.s
 	@ echo "compiling $< ..."
