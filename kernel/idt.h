@@ -28,9 +28,12 @@ struct idtr
 #define IDT_ENTRY_NUM 256
 
 /* IDT types */
-#define IDT_TYPE_TASK 0x5
-#define IDT_TYPE_INT 0xe
-#define IDT_TYPE_TRAP 0xf
+enum idt_type
+{
+    IDT_TYPE_TASK = 0x5,
+    IDT_TYPE_INT = 0xE,
+    IDT_TYPE_TRAP = 0xF,
+};
 
 /* IDT attrs */
 #define IDT_ATTR_PRESENT 0x80

@@ -4,9 +4,12 @@
 #include <lib/string.h>
 
 #define KERNEL_START_ADDRESS 0x100000
-#define MEM_ALIGNMENT 4
-#define PAGE_FLAG_USED 0x1
-#define PAGE_FLAG_LOCK 0x2
+
+enum page_flag
+{
+    PAGE_FLAG_USED = 0x1,
+    PAGE_FLAG_LOCK = 0x2,
+};
 
 /* Allocator provide memory allocation before MM initialized.
  * Only support memory alloc, do not support memory free. */

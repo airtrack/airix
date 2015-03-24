@@ -34,10 +34,13 @@ struct gdtr
 #define GDT_FLAT_MEM_DATA_SEL 0x10
 
 /* DPL values */
-#define DPL_0 0
-#define DPL_1 1
-#define DPL_2 2
-#define DPL_3 3
+enum dpl
+{
+    DPL_0 = 0,
+    DPL_1 = 1,
+    DPL_2 = 2,
+    DPL_3 = 3,
+};
 
 /* GDT init function */
 void init_gdt();

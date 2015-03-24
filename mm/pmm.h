@@ -17,29 +17,30 @@ struct mmap_entry
 };
 
 /* Values of struct mmap_entry.type */
-#define PMM_MM_ENTRY_TYPE_NORMAL 1
-#define PMM_MM_ENTRY_TYPE_RESERVED 2
-#define PMM_MM_ENTRY_TYPE_ACPI_REC 3
-#define PMM_MM_ENTRY_TYPE_ACPI_NVS 4
-#define PMM_MM_ENTRY_TYPE_BAD 5
+enum pmm_mm_entry_type
+{
+    PMM_MM_ENTRY_TYPE_NORMAL = 1,
+    PMM_MM_ENTRY_TYPE_RESERVED = 2,
+    PMM_MM_ENTRY_TYPE_ACPI_REC = 3,
+    PMM_MM_ENTRY_TYPE_ACPI_NVS = 4,
+    PMM_MM_ENTRY_TYPE_BAD = 5,
+};
 
 #define BUDDY_MAX_ORDER 11
+#define MEM_ALIGNMENT 4
 
 #define PAGE_SIZE 4096
 #define PAGE_NUMBER(addr) ((uint32_t)(addr) / PAGE_SIZE)
 #define PAGE_ADDRESS(page_num) (void *)((page_num) * PAGE_SIZE)
 
-#define ALIGN_ADDRESS(addr) \
-    (void *)((((uint32_t)addr - 1) / MEM_ALIGNMENT + 1) * MEM_ALIGNMENT)
+/* Alignment macros */
+#define ALIGN_HELPER(addr, align) \
+    ((((uint32_t)(addr) - 1) / (align) + 1) * (align))
 
-#define ALIGN_SIZE(size) \
-    (((size - 1) / MEM_ALIGNMENT + 1) * MEM_ALIGNMENT)
-
-#define ALIGN_PAGE(addr) \
-    ((((uint32_t)addr - 1) / PAGE_SIZE + 1) * PAGE_SIZE)
-
-#define ALIGN_PAGE_ADDRESS(addr) \
-    (void *)ALIGN_PAGE(addr)
+#define ALIGN_SIZE(addr) ALIGN_HELPER(addr, MEM_ALIGNMENT)
+#define ALIGN_ADDRESS(addr) (void *)ALIGN_SIZE(addr)
+#define ALIGN_PAGE(addr) ALIGN_HELPER(addr, PAGE_SIZE)
+#define ALIGN_PAGE_ADDRESS(addr) (void *)ALIGN_PAGE(addr)
 
 /* PMM init function */
 void init_pmm(void *free_addr, struct mmap_entry *entries, uint32_t num);
