@@ -1,6 +1,6 @@
 [bits 32]
-extern init_kernel
-extern kernel_main
+extern init_paging
+extern kernel_entry
 extern pic_interrupt
 extern exception_handles
 
@@ -41,12 +41,12 @@ global security_exception_entry
 
 _start:
     push    ebx
-    mov     eax, init_kernel
+    mov     eax, init_paging
     sub     eax, 0xC0000000
     call    eax
-    mov     esp, 0x10000
-    sti
-    call    kernel_main
+    mov     esp, 0xC0010000
+    mov     eax, kernel_entry
+    jmp     eax
 
 get_gdtr:
     mov     eax, dword [esp + 4]

@@ -19,5 +19,11 @@ typedef uint32_t physical_addr_t;
 
 #define KERNEL_BASE 0xC0000000
 #define VIRTUAL_TO_PHYSICAL(vaddr) (vaddr - KERNEL_BASE)
+#define PHYSICAL_TO_VIRTUAL(paddr) (paddr + KERNEL_BASE)
+
+#define CAST_VIRTUAL_TO_PHYSICAL(addr) \
+    VIRTUAL_TO_PHYSICAL((physical_addr_t)(addr))
+#define CAST_PHYSICAL_TO_VIRTUAL(addr) \
+    (void *)PHYSICAL_TO_VIRTUAL(addr)
 
 #endif // BASE_TYPES_H

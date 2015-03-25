@@ -3,7 +3,7 @@
 #include <lib/stdio.h>
 #include <lib/string.h>
 
-#define VIDEO_MEMORY 0xB8000
+#define VIDEO_MEMORY (KERNEL_BASE + 0xB8000)
 #define COLUMN 80
 #define LINE 25
 #define COLOR_BLACK_WHITE 0x0F

@@ -76,20 +76,28 @@ static int mmap_entry_compare(const void *left, const void *right)
     else return 1;
 }
 
-static uint32_t calculate_total_pages(struct mmap_entry *entries, uint32_t num)
+static uint64_t get_max_physical_address(struct mmap_entry *entries,
+                                         uint32_t num)
 {
     uint64_t end = 0;
+
     for (uint32_t i = num; i > 0; --i)
     {
         if (entries[i - 1].type == PMM_MM_ENTRY_TYPE_NORMAL ||
             entries[i - 1].type == PMM_MM_ENTRY_TYPE_ACPI_REC)
         {
-            end = (uint32_t)entries[i - 1].base + entries[i - 1].length;
+            end = (uint64_t)entries[i - 1].base + entries[i - 1].length;
             break;
         }
     }
 
-    return end / PAGE_SIZE;
+    return end;
+}
+
+static inline uint32_t calculate_total_pages(struct mmap_entry *entries,
+                                             uint32_t num)
+{
+    return get_max_physical_address(entries, num) / PAGE_SIZE;
 }
 
 static void split_block_from_area(struct page *block, uint32_t order)
@@ -274,16 +282,25 @@ static void init_pages(struct mmap_entry *entries, uint32_t num)
     printk("Total pages: %u, free pages: %u\n", num_pages, free_mem->num_pages);
 }
 
-void init_pmm(void *free_addr, struct mmap_entry *entries, uint32_t num)
+void init_pmm(physical_addr_t free_addr, struct mmap_entry *entries,
+              uint32_t num)
 {
     qsort(entries, num, sizeof(*entries), mmap_entry_compare);
+
     for (uint32_t i = 0; i < num; ++i)
     {
         printk("%d: %p - %p %d %d 0x%x\n", i, entries[i].base,
-                (char *)entries[i].base + entries[i].length,
-                entries[i].length, entries[i].type, entries[i].acpi_attr);
+                entries[i].base + entries[i].length,
+                entries[i].length, entries[i].type,
+                entries[i].acpi_attr);
     }
 
-    init_boot_allocator(free_addr);
+    init_boot_allocator(CAST_PHYSICAL_TO_VIRTUAL(free_addr));
     init_pages(entries, num);
+}
+
+uint64_t pmm_max_physical_address(struct mmap_entry *entries, uint32_t num)
+{
+    qsort(entries, num, sizeof(*entries), mmap_entry_compare);
+    return get_max_physical_address(entries, num);
 }

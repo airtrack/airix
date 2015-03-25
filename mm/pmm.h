@@ -8,12 +8,12 @@
 /* Memory map entry struct */
 struct mmap_entry
 {
-    void *base;             /* Base address */
-    void *base_high;        /* For 64 bits address */
-    uint32_t length;        /* Region length */
-    uint32_t length_high;   /* For 64 bits length */
-    uint32_t type;          /* Region type */
-    uint32_t acpi_attr;     /* ACPI 3.0 extended attributes bitfield */
+    physical_addr_t base;       /* Base address */
+    physical_addr_t base_high;  /* For 64 bits address */
+    uint32_t length;            /* Region length */
+    uint32_t length_high;       /* For 64 bits length */
+    uint32_t type;              /* Region type */
+    uint32_t acpi_attr;         /* ACPI 3.0 extended attributes bitfield */
 };
 
 /* Values of struct mmap_entry.type */
@@ -43,7 +43,11 @@ enum pmm_mm_entry_type
 #define ALIGN_PAGE_ADDRESS(addr) (void *)ALIGN_PAGE(addr)
 
 /* PMM init function */
-void init_pmm(void *free_addr, struct mmap_entry *entries, uint32_t num);
+void init_pmm(physical_addr_t free_addr, struct mmap_entry *entries,
+              uint32_t num);
+
+/* Get max address of physical memory */
+uint64_t pmm_max_physical_address(struct mmap_entry *entries, uint32_t num);
 
 /* Alloc 2 ^ order pages, returns start page number or 0 if failed */
 uint32_t alloc_pages(uint32_t order);
