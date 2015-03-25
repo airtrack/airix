@@ -7,7 +7,7 @@ static struct idt_entry idt[IDT_ENTRY_NUM];
 /* IDTR */
 static struct idtr idtr = { sizeof(idt) - 1, idt };
 
-void init_idt()
+void idt_initialize()
 {
     set_idtr(&idtr);
 }

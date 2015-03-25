@@ -39,7 +39,7 @@ enum idt_type
 #define IDT_ATTR_PRESENT 0x80
 
 /* IDT init function */
-void init_idt();
+void idt_initialize();
 
 /* Set IDT entry */
 void idt_set_entry(uint8_t entry_num, uint16_t selector,

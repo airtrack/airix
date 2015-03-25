@@ -48,11 +48,11 @@ void kernel_entry()
     clear_screen();
     printk("Init kernel ...\n");
 
-    init_gdt();
-    init_idt();
-    init_pic();
-    init_pit(50);
-    init_exception_handle();
+    gdt_initialize();
+    idt_initialize();
+    pic_initialize();
+    pit_initialize(50);
+    exception_handle_initialize();
 
     pic_register_isr(IRQ0, isr_timer);
     printk("Success!\n");

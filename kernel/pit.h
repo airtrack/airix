@@ -51,6 +51,6 @@ enum pit_port
 #define PIT_RELOAD_MAX 65535
 
 /* PIT init function, set IRQ0 timer frequency */
-void init_pit(uint32_t hz);
+void pit_initialize(uint32_t hz);
 
 #endif // PIT_H

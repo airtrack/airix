@@ -7,7 +7,7 @@ static gdt_entry_t gdt[GDT_ENTRY_NUM];
 /* GDTR */
 static struct gdtr gdtr = { sizeof(gdt) - 1, gdt };
 
-void init_gdt()
+void gdt_initialize()
 {
     uint32_t num_entries;
     struct gdtr old_gdtr;

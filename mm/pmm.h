@@ -43,43 +43,52 @@ enum pmm_mm_entry_type
 #define ALIGN_PAGE_ADDRESS(addr) (void *)ALIGN_PAGE(addr)
 
 /* PMM init function */
-void init_pmm(physical_addr_t free_addr, struct mmap_entry *entries,
-              uint32_t num);
+void pmm_initialize(physical_addr_t free_addr, struct mmap_entry *entries,
+                    uint32_t num);
 
 /* Get max address of physical memory */
 uint64_t pmm_max_physical_address(struct mmap_entry *entries, uint32_t num);
 
 /* Alloc 2 ^ order pages, returns start page number or 0 if failed */
-uint32_t alloc_pages(uint32_t order);
+uint32_t pmm_alloc_pages(uint32_t order);
 
 /* Alloc one page, returns page number or 0 if failed */
-static inline uint32_t alloc_page() { return alloc_pages(0); }
+static inline uint32_t pmm_alloc_page()
+{
+    return pmm_alloc_pages(0);
+}
 
 /* Alloc 2 ^ order pages, returns start page address or NULL if failed */
-static inline void * alloc_pages_address(uint32_t order)
+static inline void * pmm_alloc_pages_address(uint32_t order)
 {
-    return PAGE_ADDRESS(alloc_pages(order));
+    return PAGE_ADDRESS(pmm_alloc_pages(order));
 }
 
 /* Alloc one page, returns page address or NULL if failed */
-static inline void * alloc_page_address() { return alloc_pages_address(0); }
+static inline void * pmm_alloc_page_address()
+{
+    return pmm_alloc_pages_address(0);
+}
 
 /* Free page block, start from page_num, the block has 2 ^ order pages */
-void free_pages(uint32_t page_num, uint32_t order);
+void pmm_free_pages(uint32_t page_num, uint32_t order);
 
 /* Free one page */
-static inline void free_page(uint32_t page_num) { free_pages(page_num, 0); }
+static inline void pmm_free_page(uint32_t page_num)
+{
+    pmm_free_pages(page_num, 0);
+}
 
 /* Free page block by address */
-static inline void free_pages_address(void *start, uint32_t order)
+static inline void pmm_free_pages_address(void *start, uint32_t order)
 {
-    free_pages(PAGE_NUMBER(start), order);
+    pmm_free_pages(PAGE_NUMBER(start), order);
 }
 
 /* Free one page by address */
-static inline void free_page_address(void *start)
+static inline void pmm_free_page_address(void *start)
 {
-    free_pages_address(start, 0);
+    pmm_free_pages_address(start, 0);
 }
 
 #endif // PMM_H

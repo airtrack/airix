@@ -37,7 +37,7 @@ static void pic_register_isr_entries()
     pic_register_isr_entry(IRQ7);
 }
 
-void init_pic()
+void pic_initialize()
 {
     /* Init */
     out_byte(PIC_MASTER_CMD_STATUS, PIC_ICW1_INIT | PIC_ICW1_EXPECT_ICW4);

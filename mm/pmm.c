@@ -184,7 +184,7 @@ static uint32_t alloc_block(uint32_t free_order, uint32_t order)
     return block - pages;
 }
 
-uint32_t alloc_pages(uint32_t order)
+uint32_t pmm_alloc_pages(uint32_t order)
 {
     uint32_t check = order;
     while (check < BUDDY_MAX_ORDER)
@@ -201,7 +201,7 @@ uint32_t alloc_pages(uint32_t order)
     return 0;
 }
 
-void free_pages(uint32_t page_num, uint32_t order)
+void pmm_free_pages(uint32_t page_num, uint32_t order)
 {
     struct page *block = &pages[page_num];
     block->flags = 0;
@@ -274,7 +274,7 @@ static void init_pages(struct mmap_entry *entries, uint32_t num)
             {
                 uint32_t page_num = PAGE_NUMBER(start);
                 if (!(pages[page_num].flags & PAGE_FLAG_LOCK))
-                    free_pages(page_num, 0);
+                    pmm_free_pages(page_num, 0);
             }
         }
     }
@@ -282,8 +282,8 @@ static void init_pages(struct mmap_entry *entries, uint32_t num)
     printk("Total pages: %u, free pages: %u\n", num_pages, free_mem->num_pages);
 }
 
-void init_pmm(physical_addr_t free_addr, struct mmap_entry *entries,
-              uint32_t num)
+void pmm_initialize(physical_addr_t free_addr, struct mmap_entry *entries,
+                    uint32_t num)
 {
     qsort(entries, num, sizeof(*entries), mmap_entry_compare);
 

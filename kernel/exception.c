@@ -8,7 +8,7 @@ static inline void setup_handle(uint8_t num, void *handle)
     idt_set_entry(num, GDT_FLAT_MEM_TEXT_SEL, handle, IDT_TYPE_INT, DPL_0);
 }
 
-void init_exception_handle()
+void exception_handle_initialize()
 {
     setup_handle(0, divide_by_zero_entry);
     setup_handle(1, debug_entry);

@@ -1,7 +1,7 @@
 #include <kernel/pit.h>
 #include <kernel/klib.h>
 
-void init_pit(uint32_t hz)
+void pit_initialize(uint32_t hz)
 {
     /* PIT counter 0 valid value range is [2, 65535] */
     uint32_t reload;

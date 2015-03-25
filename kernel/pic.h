@@ -73,7 +73,7 @@ enum irq
 };
 
 /* PIC init function */
-void init_pic();
+void pic_initialize();
 
 /* Enable/Disable IRQ line */
 void pic_enable_irq(uint8_t irq_line);

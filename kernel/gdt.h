@@ -43,6 +43,6 @@ enum dpl
 };
 
 /* GDT init function */
-void init_gdt();
+void gdt_initialize();
 
 #endif // GDT_H
