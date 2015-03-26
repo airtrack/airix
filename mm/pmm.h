@@ -31,7 +31,7 @@ enum pmm_mm_entry_type
 
 #define PAGE_SIZE 4096
 #define PAGE_NUMBER(addr) ((uint32_t)(addr) / PAGE_SIZE)
-#define PAGE_ADDRESS(page_num) (void *)((page_num) * PAGE_SIZE)
+#define PAGE_ADDRESS(page_num) (physical_addr_t)((page_num) * PAGE_SIZE)
 
 /* Alignment macros */
 #define ALIGN_HELPER(addr, align) \
@@ -52,20 +52,23 @@ uint64_t pmm_max_physical_address(struct mmap_entry *entries, uint32_t num);
 /* Alloc 2 ^ order pages, returns start page number or 0 if failed */
 uint32_t pmm_alloc_pages(uint32_t order);
 
+/* Print memory statistics information */
+void pmm_print_statistics(struct mmap_entry *entries, uint32_t num);
+
 /* Alloc one page, returns page number or 0 if failed */
 static inline uint32_t pmm_alloc_page()
 {
     return pmm_alloc_pages(0);
 }
 
-/* Alloc 2 ^ order pages, returns start page address or NULL if failed */
-static inline void * pmm_alloc_pages_address(uint32_t order)
+/* Alloc 2 ^ order pages, returns start page physical address or 0 if failed */
+static inline physical_addr_t pmm_alloc_pages_address(uint32_t order)
 {
     return PAGE_ADDRESS(pmm_alloc_pages(order));
 }
 
-/* Alloc one page, returns page address or NULL if failed */
-static inline void * pmm_alloc_page_address()
+/* Alloc one page, returns page physical address or 0 if failed */
+static inline physical_addr_t pmm_alloc_page_address()
 {
     return pmm_alloc_pages_address(0);
 }
@@ -79,14 +82,14 @@ static inline void pmm_free_page(uint32_t page_num)
     pmm_free_pages(page_num, 0);
 }
 
-/* Free page block by address */
-static inline void pmm_free_pages_address(void *start, uint32_t order)
+/* Free page block by physical address */
+static inline void pmm_free_pages_address(physical_addr_t start, uint32_t order)
 {
     pmm_free_pages(PAGE_NUMBER(start), order);
 }
 
-/* Free one page by address */
-static inline void pmm_free_page_address(void *start)
+/* Free one page by physical address */
+static inline void pmm_free_page_address(physical_addr_t start)
 {
     pmm_free_pages_address(start, 0);
 }

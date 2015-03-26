@@ -23,7 +23,7 @@ struct boot_allocator
 struct page
 {
     uint8_t flags:4;
-    uint8_t order:4;                  /* Order number when in free_block_area */
+    uint8_t order:4;                  /* Order number of block */
 };
 
 /* Each free page block link with each other through page_block_node */
@@ -33,23 +33,24 @@ struct page_block_node
     struct page_block_node *next;
 };
 
-/* Group same size page blocks */
+/* Group the same size page blocks */
 struct free_block_area
 {
     uint32_t num_blocks;              /* Number of free blocks */
-    struct page_block_node free_head; /* Point to the first free page block */
+    struct page_block_node free_head; /* Sentry node */
 };
 
-/* All free memory pages */
-struct free_mem_pages
+/* All free memory */
+struct free_blocks
 {
+    uint32_t total_pages;
     uint32_t num_pages;               /* Number of free pages */
     struct free_block_area free_areas[BUDDY_MAX_ORDER];
 };
 
 static struct boot_allocator boot_allocator;
 static struct page *pages;
-static struct free_mem_pages *free_mem;
+static struct free_blocks *free_blocks;
 static const uint32_t order_pages[BUDDY_MAX_ORDER] =
 { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 };
 
@@ -76,6 +77,36 @@ static int mmap_entry_compare(const void *left, const void *right)
     else return 1;
 }
 
+static void init_pages_data(uint32_t num_pages)
+{
+    /* Alloc all pages memory, set all pages has been used */
+    pages = boot_alloc(sizeof(*pages) * num_pages);
+
+    for (uint32_t i = 0; i < num_pages; ++i)
+    {
+        pages[i].flags = PAGE_FLAG_USED;
+        pages[i].order = 0;
+    }
+}
+
+static void init_free_blocks(uint32_t total_pages)
+{
+    free_blocks = boot_alloc(sizeof(*free_blocks));
+
+    /* Set each area empty */
+    for (uint32_t i = 0; i < BUDDY_MAX_ORDER; ++i)
+    {
+        struct free_block_area *area = &free_blocks->free_areas[i];
+        area->free_head.prev = &area->free_head;
+        area->free_head.next = &area->free_head;
+        area->num_blocks = 0;
+    }
+
+    free_blocks->total_pages = total_pages;
+    free_blocks->num_pages = 0;
+}
+
+/* Require memory map entries have been sorted */
 static uint64_t get_max_physical_address(struct mmap_entry *entries,
                                          uint32_t num)
 {
@@ -102,13 +133,12 @@ static inline uint32_t calculate_total_pages(struct mmap_entry *entries,
 
 static void split_block_from_area(struct page *block, uint32_t order)
 {
-    struct page_block_node *node = PAGE_ADDRESS(block - pages);
-    struct free_block_area *area = &free_mem->free_areas[order];
+    physical_addr_t addr = PAGE_ADDRESS(block - pages);
+    struct page_block_node *node = CAST_PHYSICAL_TO_VIRTUAL(addr);
+    struct free_block_area *area = &free_blocks->free_areas[order];
 
-    if (node->prev)
-        node->prev->next = node->next;
-    if (node->next)
-        node->next->prev = node->prev;
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
     node->prev = node->next = NULL;
 
     area->num_blocks--;
@@ -116,16 +146,17 @@ static void split_block_from_area(struct page *block, uint32_t order)
 
 static void insert_block_into_area(struct page *block, uint32_t order)
 {
-    struct page_block_node *node = PAGE_ADDRESS(block - pages);
-    struct free_block_area *area = &free_mem->free_areas[order];
+    physical_addr_t addr = PAGE_ADDRESS(block - pages);
+    struct page_block_node *node = CAST_PHYSICAL_TO_VIRTUAL(addr);
+    struct free_block_area *area = &free_blocks->free_areas[order];
 
-    node->prev = &area->free_head;
     node->next = area->free_head.next;
-    if (area->free_head.next)
-        area->free_head.next->prev = node;
+    node->prev = &area->free_head;
+    area->free_head.next->prev = node;
     area->free_head.next = node;
 
     area->num_blocks++;
+    block->flags = 0;
     block->order = order;
 }
 
@@ -149,23 +180,27 @@ static inline struct page * merge_buddy(
         return buddy2;
 }
 
-static struct page * alloc_block_from_area(uint32_t free_order)
-{
-    struct free_block_area *area = &free_mem->free_areas[free_order];
-    struct page_block_node *node = area->free_head.next;
-
-    area->free_head.next = node->next;
-    if (node->next)
-        node->next->prev = &area->free_head;
-    node->prev = node->next = NULL;
-
-    area->num_blocks--;
-    return pages + PAGE_NUMBER(node);
-}
-
 static inline struct page * split_buddy(struct page *block, uint32_t order)
 {
     return block + order_pages[order];
+}
+
+static struct page * alloc_block_from_area(uint32_t free_order)
+{
+    struct free_block_area *area = &free_blocks->free_areas[free_order];
+    struct page_block_node *node = area->free_head.next;
+    physical_addr_t node_addr = CAST_VIRTUAL_TO_PHYSICAL(node);
+
+    /* No block in this area */
+    if (node == &area->free_head)
+        return NULL;
+
+    node->prev->next = node->next;
+    node->next->prev = node->prev;
+    node->prev = node->next = NULL;
+
+    area->num_blocks--;
+    return pages + PAGE_NUMBER(node_addr);
 }
 
 static uint32_t alloc_block(uint32_t free_order, uint32_t order)
@@ -174,8 +209,9 @@ static uint32_t alloc_block(uint32_t free_order, uint32_t order)
 
     while (free_order > order)
     {
+        /* Split block when the order of block is large than needed,
+         * returns the splitted buddy block back to the free blocks. */
         struct page *buddy = split_buddy(block, free_order - 1);
-        buddy->flags = 0;
         insert_block_into_area(buddy, --free_order);
     }
 
@@ -186,16 +222,15 @@ static uint32_t alloc_block(uint32_t free_order, uint32_t order)
 
 uint32_t pmm_alloc_pages(uint32_t order)
 {
-    uint32_t check = order;
-    while (check < BUDDY_MAX_ORDER)
+    for (uint32_t check = order; check < BUDDY_MAX_ORDER; ++check)
     {
-        if (free_mem->free_areas[check].num_blocks > 0)
+        /* Find a non empty area */
+        if (free_blocks->free_areas[check].num_blocks > 0)
         {
             uint32_t page_num = alloc_block(check, order);
-            free_mem->num_pages -= order_pages[order];
+            free_blocks->num_pages -= order_pages[order];
             return page_num;
         }
-        ++check;
     }
 
     return 0;
@@ -203,16 +238,20 @@ uint32_t pmm_alloc_pages(uint32_t order)
 
 void pmm_free_pages(uint32_t page_num, uint32_t order)
 {
+    if (page_num == 0)
+        return ;
+
     struct page *block = &pages[page_num];
     block->flags = 0;
 
-    free_mem->num_pages += order_pages[order];
+    free_blocks->num_pages += order_pages[order];
 
     for (; order < BUDDY_MAX_ORDER; ++order)
     {
         struct page *buddy = get_buddy(block, order);
         if (buddy && buddy->flags == 0 && buddy->order == order)
         {
+            /* If buddy is free too, then merge with buddy */
             split_block_from_area(buddy, order);
             block = merge_buddy(block, buddy);
         }
@@ -222,54 +261,44 @@ void pmm_free_pages(uint32_t page_num, uint32_t order)
             break;
         }
     }
+
+    if (order == BUDDY_MAX_ORDER)
+        insert_block_into_area(block, order - 1);
+}
+
+static void lock_boot_pages(void *boot_end)
+{
+    /* Lock [page 0, page of boot end address) */
+    physical_addr_t end = CAST_VIRTUAL_TO_PHYSICAL(boot_end);
+    uint32_t num = PAGE_NUMBER(ALIGN_PAGE(end));
+
+    for (uint32_t i = 0; i < num; ++i)
+        pages[i].flags |= PAGE_FLAG_LOCK;
 }
 
 static void lock_kernel_pages()
 {
-    uint32_t kstart = KERNEL_START_ADDRESS / PAGE_SIZE;
-    uint32_t kend =
-        (uint32_t)ALIGN_PAGE_ADDRESS(boot_allocator.free_address) / PAGE_SIZE;
+    /* Lock [page of kernel start, page of boot free address) */
+    physical_addr_t end = CAST_VIRTUAL_TO_PHYSICAL(
+        boot_allocator.free_address);
+
+    uint32_t kstart = PAGE_NUMBER(KERNEL_START_ADDRESS);
+    uint32_t kend = PAGE_NUMBER(ALIGN_PAGE(end));
 
     for (uint32_t i = kstart; i < kend; ++i)
         pages[i].flags |= PAGE_FLAG_LOCK;
 }
 
-static void lock_boot_pages(void *boot_end)
+static void init_free_pages(struct mmap_entry *entries, uint32_t num)
 {
-    uint32_t num = (uint32_t)ALIGN_PAGE_ADDRESS(boot_end) / PAGE_SIZE;
-
-    for (uint32_t i = 0; i < num; ++i)
-        pages[i].flags |= PAGE_FLAG_LOCK;
-}
-
-static void init_pages(struct mmap_entry *entries, uint32_t num)
-{
-    uint32_t num_pages = calculate_total_pages(entries, num);
-
-    /* Alloc all pages memory, set all pages has been used */
-    pages = boot_alloc(sizeof(*pages) * num_pages);
-    for (uint32_t i = 0; i < num_pages; ++i)
-    {
-        pages[i].flags = PAGE_FLAG_USED;
-        pages[i].order = 0;
-    }
-
-    /* Alloc buddy memory struct */
-    free_mem = boot_alloc(sizeof(*free_mem));
-    memset(free_mem, 0, sizeof(*free_mem));
-
-    /* Lock used memory pages */
-    lock_boot_pages(entries + num);
-    lock_kernel_pages();
-
-    /* Init all free pages */
+    /* Free all unlocked pages */
     for (uint32_t i = 0; i < num; ++i)
     {
         if (entries[i].type == PMM_MM_ENTRY_TYPE_NORMAL ||
             entries[i].type == PMM_MM_ENTRY_TYPE_ACPI_REC)
         {
-            uint64_t start = (uint32_t)ALIGN_PAGE_ADDRESS(entries[i].base);
-            uint64_t end = (uint32_t)entries[i].base + entries[i].length;
+            uint64_t start = ALIGN_PAGE(entries[i].base);
+            uint64_t end = (uint64_t)entries[i].base + entries[i].length;
             for (; start + PAGE_SIZE <= end; start += PAGE_SIZE)
             {
                 uint32_t page_num = PAGE_NUMBER(start);
@@ -278,23 +307,30 @@ static void init_pages(struct mmap_entry *entries, uint32_t num)
             }
         }
     }
+}
 
-    printk("Total pages: %u, free pages: %u\n", num_pages, free_mem->num_pages);
+static void init_pages(struct mmap_entry *entries, uint32_t num)
+{
+    uint32_t num_pages = calculate_total_pages(entries, num);
+
+    /* Init page array */
+    init_pages_data(num_pages);
+
+    /* Init buddy memory struct */
+    init_free_blocks(num_pages);
+
+    /* Lock used memory pages */
+    lock_boot_pages(entries + num);
+    lock_kernel_pages();
+
+    /* Init all free pages */
+    init_free_pages(entries, num);
 }
 
 void pmm_initialize(physical_addr_t free_addr, struct mmap_entry *entries,
                     uint32_t num)
 {
     qsort(entries, num, sizeof(*entries), mmap_entry_compare);
-
-    for (uint32_t i = 0; i < num; ++i)
-    {
-        printk("%d: %p - %p %d %d 0x%x\n", i, entries[i].base,
-                entries[i].base + entries[i].length,
-                entries[i].length, entries[i].type,
-                entries[i].acpi_attr);
-    }
-
     init_boot_allocator(CAST_PHYSICAL_TO_VIRTUAL(free_addr));
     init_pages(entries, num);
 }
@@ -303,4 +339,22 @@ uint64_t pmm_max_physical_address(struct mmap_entry *entries, uint32_t num)
 {
     qsort(entries, num, sizeof(*entries), mmap_entry_compare);
     return get_max_physical_address(entries, num);
+}
+
+void pmm_print_statistics(struct mmap_entry *entries, uint32_t num)
+{
+    if (entries)
+    {
+        for (uint32_t i = 0; i < num; ++i)
+        {
+            printk("%d: %p - %p %d %d 0x%x\n", i,
+                   entries[i].base,
+                   entries[i].base + entries[i].length,
+                   entries[i].length, entries[i].type,
+                   entries[i].acpi_attr);
+        }
+    }
+
+    printk("Total pages: %u, free pages: %u\n",
+           free_blocks->total_pages, free_blocks->num_pages);
 }

@@ -48,6 +48,8 @@ void kernel_entry()
     clear_screen();
     printk("Init kernel ...\n");
 
+    pmm_initialize(free, boot_info->mmap_entries, boot_info->num_mmap_entries);
+
     gdt_initialize();
     idt_initialize();
     pic_initialize();
@@ -55,6 +57,8 @@ void kernel_entry()
     exception_handle_initialize();
 
     pic_register_isr(IRQ0, isr_timer);
+
+    pmm_print_statistics(boot_info->mmap_entries, boot_info->num_mmap_entries);
     printk("Success!\n");
 
     start_int();
