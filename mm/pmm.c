@@ -162,13 +162,20 @@ static void insert_block_into_area(struct page *block, uint32_t order)
 
 static inline struct page * get_buddy(struct page *block, uint32_t order)
 {
+    struct page *buddy;
     if (order + 1 >= BUDDY_MAX_ORDER)
         return NULL;
 
     if ((block - pages) % order_pages[order + 1] == 0)
-        return block + order_pages[order];
+        buddy = block + order_pages[order];
     else
-        return block - order_pages[order];
+        buddy = block - order_pages[order];
+
+    /* If buddy is out of range, then buddy is not really exist. */
+    if (buddy < pages || buddy >= pages + free_blocks->total_pages)
+        return NULL;
+
+    return buddy;
 }
 
 static inline struct page * merge_buddy(
@@ -238,12 +245,12 @@ uint32_t pmm_alloc_pages(uint32_t order)
 
 void pmm_free_pages(uint32_t page_num, uint32_t order)
 {
+    struct page *block = &pages[page_num];
+
     if (page_num == 0)
         return ;
 
-    struct page *block = &pages[page_num];
     block->flags = 0;
-
     free_blocks->num_pages += order_pages[order];
 
     for (; order < BUDDY_MAX_ORDER; ++order)
