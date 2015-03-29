@@ -7,34 +7,42 @@ static pic_isr_t isr_table[IRQ_NUM];
 static void *isr_entry_table[IRQ_NUM] =
 {
     isr_entry0,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    isr_entry1,
+    isr_entry2,
+    isr_entry3,
+    isr_entry4,
+    isr_entry5,
+    isr_entry6,
     isr_entry7,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    isr_entry8,
+    isr_entry9,
+    isr_entry10,
+    isr_entry11,
+    isr_entry12,
+    isr_entry13,
+    isr_entry14,
+    isr_entry15
 };
 
-static inline void pic_register_isr_entry(uint8_t irq_line)
+static inline void register_isr_entry(uint8_t irq_line)
 {
     void *entry = isr_entry_table[irq_line];
     uint8_t idt_num = PIC_IDT_BASE_NUM + irq_line;
     idt_set_entry(idt_num, GDT_FLAT_MEM_TEXT_SEL, entry, IDT_TYPE_INT, DPL_0);
 }
 
-static void pic_register_isr_entries()
+static void default_handler()
 {
-    pic_register_isr_entry(IRQ0);
-    pic_register_isr_entry(IRQ7);
+    panic("PIC default handler: unhandled interrupt");
+}
+
+static void register_isr_entries()
+{
+    for (uint32_t i = 0; i < IRQ_NUM; ++i)
+        isr_table[i] = default_handler;
+
+    for (uint32_t i = 0; i < IRQ_NUM; ++i)
+        register_isr_entry(i);
 }
 
 void pic_initialize()
@@ -59,7 +67,7 @@ void pic_initialize()
     out_byte(PIC_MASTER_IMR_DATA, 0xFF);
     out_byte(PIC_SLAVE_IMR_DATA, 0xFF);
 
-    pic_register_isr_entries();
+    register_isr_entries();
 }
 
 void pic_enable_irq(uint8_t irq_line)
@@ -67,14 +75,14 @@ void pic_enable_irq(uint8_t irq_line)
     uint16_t port;
     uint8_t value;
 
-    if (irq_line < 8)
+    if (irq_line < IRQ8)
     {
         port = PIC_MASTER_IMR_DATA;
     }
     else
     {
         port = PIC_SLAVE_IMR_DATA;
-        irq_line -= 8;
+        irq_line -= IRQ8;
     }
 
     value = in_byte(port) & ~(1 << irq_line);
@@ -86,29 +94,34 @@ void pic_disable_irq(uint8_t irq_line)
     uint16_t port;
     uint8_t value;
 
-    if (irq_line < 8)
+    if (irq_line < IRQ8)
     {
         port = PIC_MASTER_IMR_DATA;
     }
     else
     {
         port = PIC_SLAVE_IMR_DATA;
-        irq_line -= 8;
+        irq_line -= IRQ8;
     }
 
     value = in_byte(port) | (1 << irq_line);
     out_byte(port, value);
 }
 
-static inline void pic_send_eoi()
+/* Notify PIC interrupt is done */
+static inline void send_eoi(uint8_t irq_line)
 {
+    if (irq_line >= IRQ8)
+        out_byte(PIC_SLAVE_CMD_STATUS, PIC_OCW2_EOI);
+
     out_byte(PIC_MASTER_CMD_STATUS, PIC_OCW2_EOI);
 }
 
+/* All PIC entries call this function */
 void pic_interrupt(uint8_t irq_line)
 {
     isr_table[irq_line]();
-    pic_send_eoi();
+    send_eoi(irq_line);
 }
 
 void pic_register_isr(uint8_t irq_line, pic_isr_t isr)

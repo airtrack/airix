@@ -23,7 +23,21 @@ void enable_paging(void *page_directory);
 
 /* IRQ ISR entry */
 void isr_entry0();
+void isr_entry1();
+void isr_entry2();
+void isr_entry3();
+void isr_entry4();
+void isr_entry5();
+void isr_entry6();
 void isr_entry7();
+void isr_entry8();
+void isr_entry9();
+void isr_entry10();
+void isr_entry11();
+void isr_entry12();
+void isr_entry13();
+void isr_entry14();
+void isr_entry15();
 
 /* Exceptions entry */
 void divide_by_zero_entry();

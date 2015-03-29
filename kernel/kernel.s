@@ -16,7 +16,21 @@ global halt
 global enable_paging
 
 global isr_entry0
+global isr_entry1
+global isr_entry2
+global isr_entry3
+global isr_entry4
+global isr_entry5
+global isr_entry6
 global isr_entry7
+global isr_entry8
+global isr_entry9
+global isr_entry10
+global isr_entry11
+global isr_entry12
+global isr_entry13
+global isr_entry14
+global isr_entry15
 
 global divide_by_zero_entry
 global debug_entry
@@ -99,13 +113,34 @@ enable_paging:
     mov     cr0, eax
     ret
 
-isr_entry0:
+%macro isr_entry 1
+
+isr_entry%1:
     pushad
-    push    0
+    push    %1
     call    pic_interrupt
     add     esp, 4
     popad
     iret
+
+%endmacro
+
+isr_entry 0
+isr_entry 1
+isr_entry 2
+isr_entry 3
+isr_entry 4
+isr_entry 5
+isr_entry 6
+
+isr_entry 8
+isr_entry 9
+isr_entry 10
+isr_entry 11
+isr_entry 12
+isr_entry 13
+isr_entry 14
+isr_entry 15
 
 isr_entry7:
     pushad
