@@ -1,6 +1,8 @@
 #ifndef BASE_TYPES_H
 #define BASE_TYPES_H
 
+#include <stdbool.h>
+
 #define NULL (void *)0
 
 typedef unsigned char uint8_t;

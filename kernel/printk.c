@@ -55,6 +55,13 @@ static void put_char(uint8_t color, uint8_t c)
     }
 }
 
+void put_char_at(uint32_t line, uint32_t column, char c)
+{
+    uint8_t *pos = (uint8_t *)(video_memory + line * COLUMN + column);
+    *pos++ = c;
+    *pos = COLOR_BLACK_WHITE;
+}
+
 void clear_screen()
 {
     uint8_t *pos = (uint8_t *)video_memory;

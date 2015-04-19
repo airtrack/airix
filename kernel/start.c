@@ -3,6 +3,8 @@
 #include <kernel/pic.h>
 #include <kernel/pit.h>
 #include <kernel/exception.h>
+#include <kernel/keyboard.h>
+#include <kernel/console.h>
 #include <kernel/klib.h>
 #include <mm/pmm.h>
 #include <mm/paging.h>
@@ -14,11 +16,32 @@ struct boot_info
     struct mmap_entry mmap_entries[1];
 };
 
-static void isr_timer()
+static struct boot_info *boot_info;
+
+static void test_isr_timer()
 {
+    static char c = 0;
+    put_char_at(12, 0, c++);
 }
 
-static struct boot_info *boot_info;
+static void test_console_char_consumer(console_char_t c, void *data)
+{
+    (void)data;
+    put_char_at(15, 0, c & 0xFF);
+}
+
+static void install_keyboard_test()
+{
+    static struct console console;
+    struct key_code_handler handler;
+
+    console.char_consumer = test_console_char_consumer;
+    console.data = NULL;
+
+    handler.handler = console_key_code_handler;
+    handler.data = &console;
+    kbd_set_key_code_handler(&handler);
+}
 
 void init_paging(physical_addr_t bi)
 {
@@ -54,9 +77,11 @@ void kernel_entry()
     idt_initialize();
     pic_initialize();
     pit_initialize(50);
+    kbd_initialize();
     exception_handle_initialize();
 
-    pic_register_isr(IRQ0, isr_timer);
+    pic_register_isr(IRQ0, test_isr_timer);
+    install_keyboard_test();
 
     pmm_print_statistics(boot_info->mmap_entries, boot_info->num_mmap_entries);
     printk("Success!\n");

@@ -62,6 +62,7 @@ void virtualization_entry();
 void security_exception_entry();
 
 /* Helper functions */
+void put_char_at(uint32_t line, uint32_t column, char c);
 void clear_screen();
 void printk(const char *fmt, ...);
 void panic(const char *fmt, ...);
