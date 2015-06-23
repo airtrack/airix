@@ -9,7 +9,9 @@ global get_gdtr
 global set_gdtr
 global set_idtr
 global in_byte
+global in_dword
 global out_byte
+global out_dword
 global close_int
 global start_int
 global halt
@@ -85,10 +87,26 @@ in_byte:
     nop
     ret
 
+in_dword:
+    mov     edx, dword [esp + 4]
+    xor     eax, eax
+    in      eax, dx
+    nop
+    nop
+    ret
+
 out_byte:
     mov     edx, dword [esp + 4]
     mov     al, byte [esp + 8]
     out     dx, al
+    nop
+    nop
+    ret
+
+out_dword:
+    mov     edx, dword [esp + 4]
+    mov     eax, dword [esp + 8]
+    out     dx, eax
     nop
     nop
     ret

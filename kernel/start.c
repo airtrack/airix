@@ -2,6 +2,7 @@
 #include <kernel/idt.h>
 #include <kernel/pic.h>
 #include <kernel/pit.h>
+#include <kernel/pci.h>
 #include <kernel/exception.h>
 #include <kernel/keyboard.h>
 #include <kernel/console.h>
@@ -80,6 +81,7 @@ void kernel_entry()
     kbd_initialize();
     exception_handle_initialize();
 
+    pci_detecting_devices();
     pic_register_isr(IRQ0, test_isr_timer);
     install_keyboard_test();
 
