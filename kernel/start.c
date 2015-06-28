@@ -22,7 +22,7 @@ static struct boot_info *boot_info;
 static void test_isr_timer()
 {
     static char c = 0;
-    put_char_at(12, 0, c++);
+    put_char_at(18, 0, c++);
 }
 
 static void test_console_char_consumer(console_char_t c, void *data)

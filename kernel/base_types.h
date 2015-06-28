@@ -28,4 +28,6 @@ typedef uint32_t physical_addr_t;
 #define CAST_PHYSICAL_TO_VIRTUAL(addr) \
     (void *)PHYSICAL_TO_VIRTUAL(addr)
 
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
+
 #endif // BASE_TYPES_H

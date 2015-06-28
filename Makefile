@@ -16,7 +16,7 @@ KERNEL_BIN = kernel.bin
 INCLUDE = -I.
 CFLAGS = -std=c99 -m32 -Wall -Wextra -fno-builtin -fno-stack-protector $(INCLUDE)
 
-all: dir bootloader kernel a_img
+all: dir bootloader kernel a_img disk
 
 clean:
 	@ rm -f kernel/*.o mm/*.o lib/*.o $(BIN_DIR)/* $(A_IMG)
@@ -45,3 +45,7 @@ a_img: bootloader kernel
 	@ dd if=/dev/zero of=$(A_IMG) bs=512 count=2880 > /dev/null 2>&1
 	@ dd if=$(BIN_DIR)/$(BOOTLOADER_BIN) of=$(A_IMG) conv=notrunc bs=512 count=1 > /dev/null 2>&1
 	@ dd if=$(BIN_DIR)/$(KERNEL_BIN) of=$(A_IMG) seek=512 conv=notrunc bs=1 > /dev/null 2>&1
+
+disk:
+	@ echo "making disk ..."
+	@ dd if=/dev/zero of=disk bs=512 count=20160 > /dev/null 2>&1

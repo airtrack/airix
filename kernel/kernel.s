@@ -10,6 +10,7 @@ global set_gdtr
 global set_idtr
 global in_byte
 global in_dword
+global insw
 global out_byte
 global out_dword
 global close_int
@@ -93,6 +94,13 @@ in_dword:
     in      eax, dx
     nop
     nop
+    ret
+
+insw:
+    mov     dx, word [esp + 4]
+    mov     ecx, dword [esp + 8]
+    mov     edi, dword [esp + 12]
+    rep     insw
     ret
 
 out_byte:

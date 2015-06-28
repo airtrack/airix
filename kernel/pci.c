@@ -1,5 +1,6 @@
-#include "pci.h"
-#include "klib.h"
+#include <kernel/pci.h>
+#include <kernel/klib.h>
+#include <kernel/ide.h>
 
 #define PCI_ENABLE_FLAG 0x80000000
 #define INVALID_VENDOR_ID 0xffff
@@ -28,14 +29,15 @@ static inline uint16_t config_read_high_word(uint32_t bus, uint32_t device,
 
 static void check_device_function(uint8_t bus, uint8_t device, uint8_t func)
 {
-    uint16_t code = config_read_high_word(bus, device, func, 0x8);
-    uint8_t class = (code >> 8) & 0xff;
-    uint8_t subclass = code & 0xff;
+    uint32_t code = config_read(bus, device, func, 0x8);
+    uint8_t class = (code >> 24) & 0xff;
+    uint8_t subclass = (code >> 16) & 0xff;
+    uint8_t prog_if = (code >> 8) & 0xff;
 
-    if (class == PCI_CLASS_MASS_STORAGE && subclass == PCI_SUBCLASS_IDE)
+    if (class == PCI_CLASS_MASS_STORAGE && subclass == PCI_SUBCLASS_IDE &&
+        (prog_if == 0x8a || prog_if == 0x80))
     {
-        printk("[PCI] - find a IDE, device ID: 0x%x\n",
-               config_read_high_word(bus, device, func, 0));
+        ide_initialize();
     }
 }
 

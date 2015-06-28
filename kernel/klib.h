@@ -11,6 +11,7 @@ void set_idtr(const void *idtr);
 /* IO functions */
 uint8_t in_byte(uint16_t port);
 uint32_t in_dword(uint16_t port);
+void insw(uint16_t port, uint32_t count, void *buffer);
 void out_byte(uint16_t port, uint8_t value);
 void out_dword(uint16_t port, uint32_t value);
 
