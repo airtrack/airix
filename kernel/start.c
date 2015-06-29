@@ -28,7 +28,12 @@ static void test_isr_timer()
 static void test_console_char_consumer(console_char_t c, void *data)
 {
     (void)data;
-    put_char_at(15, 0, c & 0xFF);
+    if (c >= SHIFT('a') && c <= SHIFT('z'))
+        put_char_at(15, 0, (c & 0xFF) - 32);
+    else if (c >= SHIFT('A') && c <= SHIFT('Z'))
+        put_char_at(15, 0, (c & 0xFF) + 32);
+    else
+        put_char_at(15, 0, c & 0xFF);
 }
 
 static void install_keyboard_test()
