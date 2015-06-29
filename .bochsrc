@@ -1,13 +1,13 @@
 megs: 32
 
-romimage: file=$BXSHARE\BIOS-bochs-latest
-vgaromimage: file=$BXSHARE\VGABIOS-lgpl-latest
+romimage: file=$BXSHARE/BIOS-bochs-latest
+vgaromimage: file=$BXSHARE/VGABIOS-lgpl-latest
 
 floppya: 1_44=a.img, status=inserted
 boot: floppy
 
 log: bochsout.txt
 mouse: enabled=0
-keyboard: keymap=$BXSHARE\keymaps\x11-pc-us.map
+keyboard: keymap=$BXSHARE/keymaps/x11-pc-us.map
 
 ata0-master: type=disk, mode=flat, path="disk", model="HDD disk"
