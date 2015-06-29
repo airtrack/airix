@@ -8,6 +8,5 @@ boot: floppy
 
 log: bochsout.txt
 mouse: enabled=0
-keyboard: keymap=$BXSHARE/keymaps/x11-pc-us.map
 
 ata0-master: type=disk, mode=flat, path="disk", model="HDD disk"
