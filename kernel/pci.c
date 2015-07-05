@@ -37,7 +37,9 @@ static void check_device_function(uint8_t bus, uint8_t device, uint8_t func)
     if (class == PCI_CLASS_MASS_STORAGE && subclass == PCI_SUBCLASS_IDE &&
         (prog_if == 0x8a || prog_if == 0x80))
     {
-        ide_initialize();
+        /* Get bus master register base address */
+        uint16_t bar4 = config_read(bus, device, func, 0x20) & 0xfffc;
+        ide_initialize(bar4);
     }
 }
 

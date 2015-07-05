@@ -1,6 +1,8 @@
 #ifndef IDE_H
 #define IDE_H
 
+#include <kernel/base_types.h>
+
 /* Base address register of IDE */
 enum ide_bar
 {
@@ -63,6 +65,30 @@ enum ide_register
     IDE_REGISTER_COMMAND_STATUS,
 };
 
-void ide_initialize();
+/* IO ports offset of bus master */
+enum ide_bus_master
+{
+    IDE_BUS_MASTER_CMD = 0,
+    IDE_BUS_MASTER_STATUS = 2,
+    IDE_BUS_MASTER_PRDT = 4,
+};
+
+/* Function which will be called on DMA read/write are completed */
+typedef void (*ide_on_io_complete_t)(physical_addr_t, uint32_t);
+
+/* IO data struct for DMA read/write */
+struct ide_dma_io_data
+{
+    size_t size;
+    physical_addr_t buffer;
+    ide_on_io_complete_t complete_func;
+};
+
+void ide_initialize(uint16_t bm_dma);
+
+void ide_dma_read_sectors(uint8_t drive, uint64_t start, uint16_t sector_count,
+                          const struct ide_dma_io_data *io_data);
+void ide_dma_write_sectors(uint8_t drive, uint64_t start, uint16_t sector_count,
+                           const struct ide_dma_io_data *io_data);
 
 #endif // IDE_H

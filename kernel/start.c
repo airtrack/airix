@@ -3,12 +3,14 @@
 #include <kernel/pic.h>
 #include <kernel/pit.h>
 #include <kernel/pci.h>
+#include <kernel/ide.h>
 #include <kernel/exception.h>
 #include <kernel/keyboard.h>
 #include <kernel/console.h>
 #include <kernel/klib.h>
 #include <mm/pmm.h>
 #include <mm/paging.h>
+#include <lib/string.h>
 
 struct boot_info
 {
@@ -29,14 +31,14 @@ static void test_console_char_consumer(console_char_t c, void *data)
 {
     (void)data;
     if (c >= SHIFT('a') && c <= SHIFT('z'))
-        put_char_at(15, 0, (c & 0xFF) - 32);
+        put_char_at(17, 0, (c & 0xFF) - 32);
     else if (c >= SHIFT('A') && c <= SHIFT('Z'))
-        put_char_at(15, 0, (c & 0xFF) + 32);
+        put_char_at(17, 0, (c & 0xFF) + 32);
     else
-        put_char_at(15, 0, c & 0xFF);
+        put_char_at(17, 0, c & 0xFF);
 }
 
-static void install_keyboard_test()
+static void test_install_keyboard()
 {
     static struct console console;
     struct key_code_handler handler;
@@ -47,6 +49,50 @@ static void install_keyboard_test()
     handler.handler = console_key_code_handler;
     handler.data = &console;
     kbd_set_key_code_handler(&handler);
+}
+
+static unsigned char sector_data[512];
+static bool writed = false;
+
+static void test_ide_drive_write();
+
+static void test_read_complete(physical_addr_t buffer, size_t size)
+{
+    char *data = CAST_PHYSICAL_TO_VIRTUAL(buffer);
+
+    printk("Read complete address: %p, size: %u\n", data, size);
+    for (size_t i = 0; i < 16; ++i)
+        printk("%x ", data[i]++);
+    printk("\n");
+
+    if (!writed)
+        test_ide_drive_write();
+    writed = true;
+}
+
+static void test_ide_drive_read()
+{
+    struct ide_dma_io_data io_data;
+    io_data.buffer = CAST_VIRTUAL_TO_PHYSICAL(sector_data);
+    io_data.size = sizeof(sector_data);
+    io_data.complete_func = test_read_complete;
+    ide_dma_read_sectors(0, 0, 1, &io_data);
+}
+
+static void test_write_complete(physical_addr_t buffer, size_t size)
+{
+    char *data = CAST_PHYSICAL_TO_VIRTUAL(buffer);
+    memset(data, 0, size);
+    test_ide_drive_read();
+}
+
+static void test_ide_drive_write()
+{
+    struct ide_dma_io_data io_data;
+    io_data.buffer = CAST_VIRTUAL_TO_PHYSICAL(sector_data);
+    io_data.size = sizeof(sector_data);
+    io_data.complete_func = test_write_complete;
+    ide_dma_write_sectors(0, 0, 1, &io_data);
 }
 
 void init_paging(physical_addr_t bi)
@@ -85,13 +131,14 @@ void kernel_entry()
     pit_initialize(50);
     kbd_initialize();
     exception_handle_initialize();
-
     pci_detecting_devices();
-    pic_register_isr(IRQ0, test_isr_timer);
-    install_keyboard_test();
 
     pmm_print_statistics(boot_info->mmap_entries, boot_info->num_mmap_entries);
     printk("Success!\n");
+
+    pic_register_isr(IRQ0, test_isr_timer);
+    test_install_keyboard();
+    test_ide_drive_read();
 
     start_int();
     kernel_main();
