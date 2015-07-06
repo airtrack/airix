@@ -35,4 +35,4 @@ void console_key_code_handler(uint32_t key_states,
                               enum key_code key_code,
                               void *data);
 
-#endif // CONSOLE_H
+#endif /* CONSOLE_H */

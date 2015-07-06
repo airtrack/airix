@@ -86,4 +86,4 @@ struct kernel_idle
 void register_kernel_idle(struct kernel_idle *idle);
 void unregister_kernel_idle(struct kernel_idle *idle);
 
-#endif // KLIB_H
+#endif /* KLIB_H */

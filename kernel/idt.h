@@ -45,4 +45,4 @@ void idt_initialize();
 void idt_set_entry(uint8_t entry_num, uint16_t selector,
         void *offset, uint8_t type, uint8_t dpl);
 
-#endif // IDT_H
+#endif /* IDT_H */

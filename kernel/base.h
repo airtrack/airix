@@ -30,4 +30,4 @@ typedef uint32_t physical_addr_t;
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
-#endif // BASE_H
+#endif /* BASE_H */

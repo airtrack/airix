@@ -45,4 +45,4 @@ enum dpl
 /* GDT init function */
 void gdt_initialize();
 
-#endif // GDT_H
+#endif /* GDT_H */

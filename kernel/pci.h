@@ -19,4 +19,4 @@ enum pci_subclass
 
 void pci_detecting_devices();
 
-#endif // PCI_H
+#endif /* PCI_H */

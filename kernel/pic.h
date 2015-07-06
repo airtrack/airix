@@ -83,4 +83,4 @@ void pic_disable_irq(uint8_t irq_line);
 typedef void (*pic_isr_t)();
 void pic_register_isr(uint8_t irq_line, pic_isr_t isr);
 
-#endif // PIC_H
+#endif /* PIC_H */

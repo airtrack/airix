@@ -13,4 +13,4 @@
 void qsort(void *base, size_t n, size_t width,
         int (*compare)(const void *, const void *));
 
-#endif // STDLIB_H
+#endif /* STDLIB_H */

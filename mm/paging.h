@@ -17,4 +17,4 @@ physical_addr_t pg_init_paging(physical_addr_t page_aligned_free);
 physical_addr_t pg_complete_paging(physical_addr_t page_aligned_free,
                                    struct mmap_entry *entries, uint32_t num);
 
-#endif // PAGING_H
+#endif /* PAGING_H */

@@ -3,4 +3,4 @@
 
 void exception_handle_initialize();
 
-#endif // EXCEPTION_H
+#endif /* EXCEPTION_H */

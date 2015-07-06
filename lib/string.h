@@ -15,4 +15,4 @@ void * memcpy(void *restrict dst, const void *restrict src, size_t n);
  */
 void * memset(void *b, int c, size_t len);
 
-#endif // STRING_H
+#endif /* STRING_H */

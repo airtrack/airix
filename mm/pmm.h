@@ -94,4 +94,4 @@ static inline void pmm_free_page_address(physical_addr_t start)
     pmm_free_pages_address(start, 0);
 }
 
-#endif // PMM_H
+#endif /* PMM_H */

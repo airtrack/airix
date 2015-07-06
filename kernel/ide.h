@@ -91,4 +91,4 @@ void ide_dma_read_sectors(uint8_t drive, uint64_t start, uint16_t sector_count,
 void ide_dma_write_sectors(uint8_t drive, uint64_t start, uint16_t sector_count,
                            const struct ide_dma_io_data *io_data);
 
-#endif // IDE_H
+#endif /* IDE_H */

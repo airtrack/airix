@@ -185,4 +185,4 @@ static inline bool kbd_is_alt_set(uint32_t key_states)
                                 KEY_STATE_LALT | KEY_STATE_RALT);
 }
 
-#endif // KEYBOARD_H
+#endif /* KEYBOARD_H */

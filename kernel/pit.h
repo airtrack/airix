@@ -53,4 +53,4 @@ enum pit_port
 /* PIT init function, set IRQ0 timer frequency */
 void pit_initialize(uint32_t hz);
 
-#endif // PIT_H
+#endif /* PIT_H */
