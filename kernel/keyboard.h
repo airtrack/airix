@@ -1,7 +1,7 @@
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
-#include <kernel/base_types.h>
+#include <kernel/base.h>
 
 enum key_code
 {
@@ -144,8 +144,10 @@ enum key_state
     KEY_STATE_SCROLL_LOCK = 0x400,
 };
 
-/* Key code handler prototype:
- * void handler(uint32_t key_states, enum key_code key, void *data); */
+/*
+ * Key code handler prototype:
+ * void handler(uint32_t key_states, enum key_code key, void *data);
+ */
 typedef void (*key_code_handler_t)(uint32_t, enum key_code, void *);
 
 /* Key code handler struct */

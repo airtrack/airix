@@ -1,5 +1,5 @@
-#ifndef BASE_TYPES_H
-#define BASE_TYPES_H
+#ifndef BASE_H
+#define BASE_H
 
 #include <stdbool.h>
 
@@ -30,4 +30,4 @@ typedef uint32_t physical_addr_t;
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
-#endif // BASE_TYPES_H
+#endif // BASE_H

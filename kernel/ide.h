@@ -1,7 +1,7 @@
 #ifndef IDE_H
 #define IDE_H
 
-#include <kernel/base_types.h>
+#include <kernel/base.h>
 
 /* Base address register of IDE */
 enum ide_bar

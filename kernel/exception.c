@@ -133,7 +133,7 @@ static void security_exception_handle(uint32_t error_code)
     panic("Security exception, error code: 0x%x", error_code);
 }
 
-// Export to assembly
+/* Export to assembly */
 void *exception_handles[] =
 {
     divide_by_zero_handle,

@@ -11,8 +11,10 @@ enum page_flag
     PAGE_FLAG_LOCK = 0x2,
 };
 
-/* Allocator provide memory allocation before MM initialized.
- * Only support memory alloc, do not support memory free. */
+/*
+ * Allocator provide memory allocation before MM initialized.
+ * Only support memory alloc, do not support memory free.
+ */
 struct boot_allocator
 {
     char *start_address;
@@ -216,8 +218,10 @@ static uint32_t alloc_block(uint32_t free_order, uint32_t order)
 
     while (free_order > order)
     {
-        /* Split block when the order of block is large than needed,
-         * returns the splitted buddy block back to the free blocks. */
+        /*
+         * Split block when the order of block is large than needed,
+         * returns the splitted buddy block back to the free blocks.
+         */
         struct page *buddy = split_buddy(block, free_order - 1);
         insert_block_into_area(buddy, --free_order);
     }

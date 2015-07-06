@@ -1,7 +1,7 @@
 #ifndef PMM_H
 #define PMM_H
 
-#include <kernel/base_types.h>
+#include <kernel/base.h>
 
 /* This file define Physical Memory Manager */
 

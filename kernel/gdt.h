@@ -1,7 +1,7 @@
 #ifndef GDT_H
 #define GDT_H
 
-#include <kernel/base_types.h>
+#include <kernel/base.h>
 
 #pragma pack(push, 1)
 

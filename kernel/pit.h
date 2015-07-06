@@ -1,7 +1,7 @@
 #ifndef PIT_H
 #define PIT_H
 
-#include <kernel/base_types.h>
+#include <kernel/base.h>
 
 /* PIT channels */
 enum pit_channel

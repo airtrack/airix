@@ -26,9 +26,11 @@ struct console
     void *data;
 };
 
-/* Convert keyboard's key code to console_char_t, data is
+/*
+ * Convert keyboard's key code to console_char_t, data is
  * a pointer of struct console, the converted console_char_t
- * will be consumed by the struct console */
+ * will be consumed by the struct console
+ */
 void console_key_code_handler(uint32_t key_states,
                               enum key_code key_code,
                               void *data);

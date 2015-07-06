@@ -159,8 +159,10 @@ static void wait_controller_ready()
 
 static inline void encoder_send_cmd(uint8_t cmd)
 {
-    /* Wait for keyboard controller to be ready, because commands are sent
-     * to keyboard controller first. */
+    /*
+     * Wait for keyboard controller to be ready, because commands are sent
+     * to keyboard controller first.
+     */
     wait_controller_ready();
     out_byte(ENCODER_CMD_REG, cmd);
 }
@@ -175,10 +177,12 @@ static void set_leds(bool num, bool caps, bool scroll)
 {
     uint8_t data = 0;
 
-    /* Bit 0: scroll lock LED
+    /*
+     * Bit 0: scroll lock LED
      * Bit 1: number lock LED
      * Bit 2: caps lock LED
-     * 0: off 1: on */
+     * 0: off 1: on
+     */
     data = scroll ? data | 0x1 : data;
     data = num ? data | 0x2 : data;
     data = caps ? data | 0x4 : data;

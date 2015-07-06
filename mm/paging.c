@@ -55,10 +55,12 @@ physical_addr_t pg_init_paging(physical_addr_t page_aligned_free)
     page_tab = (void *)page_aligned_free;
     page_aligned_free += PAGE_SIZE;
 
-    /* Map virtual address to physical address:
+    /*
+     * Map virtual address to physical address:
      * [KERNEL_BASE, KERNEL_BASE + 4MB) to [0, 4MB),
      * [0, 4MB) to [0, 4MB).
-     * [0, 4MB) to [0, 4MB) is required when enable_paging returning */
+     * [0, 4MB) to [0, 4MB) is required when enable_paging returning
+     */
     for (uint32_t i = 0; i < NUM_PDE; ++i)
         page_dir->entries[i] = PDE_WRITABLE;
     for (uint32_t i = 0; i < NUM_PTE; ++i)
@@ -85,8 +87,10 @@ physical_addr_t pg_complete_paging(physical_addr_t page_aligned_free,
     /* Clear virtual address's [0, 4MB) to physical address's [0, 4MB) map */
     pg_dir->entries[0] = PDE_WRITABLE;
 
-    /* Install paging tables for [4MB, max_physical_addr).
-     * Map [4MB, max_physical_addr) to [KERNEL_BASE + 4MB, ...) */
+    /*
+     * Install paging tables for [4MB, max_physical_addr).
+     * Map [4MB, max_physical_addr) to [KERNEL_BASE + 4MB, ...)
+     */
     while (physical_addr < max_physical_addr)
     {
         uint32_t virtual_addr = (uint32_t)physical_addr + KERNEL_BASE;
