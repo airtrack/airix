@@ -33,13 +33,9 @@ enum pmm_mm_entry_type
 #define PAGE_NUMBER(addr) ((uint32_t)(addr) / PAGE_SIZE)
 #define PAGE_ADDRESS(page_num) (physical_addr_t)((page_num) * PAGE_SIZE)
 
-/* Alignment macros */
-#define ALIGN_HELPER(addr, align) \
-    ((((uint32_t)(addr) - 1) / (align) + 1) * (align))
-
-#define ALIGN_SIZE(addr) ALIGN_HELPER(addr, MEM_ALIGNMENT)
+#define ALIGN_SIZE(x) ALIGN((uint32_t)(x), MEM_ALIGNMENT)
 #define ALIGN_ADDRESS(addr) (void *)ALIGN_SIZE(addr)
-#define ALIGN_PAGE(addr) ALIGN_HELPER(addr, PAGE_SIZE)
+#define ALIGN_PAGE(addr) ALIGN((uint32_t)(addr), PAGE_SIZE)
 #define ALIGN_PAGE_ADDRESS(addr) (void *)ALIGN_PAGE(addr)
 
 /* PMM init function */
