@@ -1,6 +1,7 @@
 #include <kernel/ide.h>
 #include <kernel/klib.h>
 #include <kernel/pic.h>
+#include <mm/slab.h>
 
 enum bus_master_cmd
 {
@@ -30,24 +31,94 @@ struct prd_entry
 
 struct dma_io_data
 {
-    struct drive *drive;
     size_t size;
     physical_addr_t buffer;
     ide_on_io_complete_t complete_func;
+
+    uint8_t drive;
+    uint8_t bm_cmd;
+    uint8_t cmd;
+    uint64_t start_sector;
+    uint16_t sector_count;
+
+    struct dma_io_data *prev;
+    struct dma_io_data *next;
 };
 
 static struct drive drives[IDE_ATA_BUS_COUNT * IDE_ATA_DRIVE_COUNT];
 static struct prd_entry prdt[IDE_ATA_BUS_COUNT];
 static struct dma_io_data dma_io_data[IDE_ATA_BUS_COUNT];
 static struct kernel_idle ide_idle;
+static struct kmem_cache *io_data_cache;
+
+static void initialize_io_data()
+{
+    /* Initialize io data lists. */
+    for (uint32_t i = 0; i < IDE_ATA_BUS_COUNT; ++i)
+    {
+        struct dma_io_data *io_data = &dma_io_data[i];
+        io_data->prev = io_data->next = io_data;
+    }
+
+    /* Create struct dma_io_data cache */
+    io_data_cache = slab_create_kmem_cache(sizeof(struct dma_io_data), sizeof(void *));
+}
+
+static void start_io_operation(const struct dma_io_data *data)
+{
+    uint8_t cmd = data->cmd;
+    uint8_t bm_cmd = data->bm_cmd;
+    uint16_t count = data->sector_count;
+    uint64_t start = data->start_sector;
+    struct drive *d = &drives[data->drive];
+    struct prd_entry *prdt_address = &prdt[d->bus];
+
+    /* Prepare PRDT */
+    prdt_address->physical_addr = data->buffer;
+    prdt_address->size = data->size;
+    prdt_address->reserved = 0x8000;    /* Set it as the last PRD entry */
+
+    /* Stop DMA first, and then send command. */
+    out_byte(d->bm_reg + IDE_BUS_MASTER_CMD, 0x0);
+    out_dword(d->bm_reg + IDE_BUS_MASTER_PRDT, CAST_VIRTUAL_TO_PHYSICAL(prdt_address));
+    out_byte(d->bm_reg + IDE_BUS_MASTER_CMD, bm_cmd | 0x1);
+
+    if (d->lba48)
+    {
+        out_byte(d->base_reg + IDE_REGISTER_DRIVE_SELECT, 0x40 | (d->drive << 4));
+        out_byte(d->base_reg + IDE_REGISTER_SECTOR_COUNT, (count >> 8) & 0xff);
+        out_byte(d->base_reg + IDE_REGISTER_LBA_LO, (start >> 24) & 0xff);
+        out_byte(d->base_reg + IDE_REGISTER_LBA_MID, (start >> 32) & 0xff);
+        out_byte(d->base_reg + IDE_REGISTER_LBA_HI, (start >> 40) & 0xff);
+        out_byte(d->base_reg + IDE_REGISTER_SECTOR_COUNT, count & 0xff);
+        out_byte(d->base_reg + IDE_REGISTER_LBA_LO, start & 0xff);
+        out_byte(d->base_reg + IDE_REGISTER_LBA_MID, (start >> 8) & 0xff);
+        out_byte(d->base_reg + IDE_REGISTER_LBA_HI, (start >> 16) & 0xff);
+    }
+    else
+    {
+        out_byte(d->base_reg + IDE_REGISTER_DRIVE_SELECT,
+                 0xe0 | (d->drive << 4) | ((start >> 24) & 0x0f));
+        out_byte(d->base_reg + IDE_REGISTER_FEATURE_ERROR, 0);
+        out_byte(d->base_reg + IDE_REGISTER_SECTOR_COUNT, count);
+        out_byte(d->base_reg + IDE_REGISTER_LBA_LO, start & 0xff);
+        out_byte(d->base_reg + IDE_REGISTER_LBA_MID, (start >> 8) & 0xff);
+        out_byte(d->base_reg + IDE_REGISTER_LBA_HI, (start >> 16) & 0xff);
+    }
+
+    out_byte(d->base_reg + IDE_REGISTER_COMMAND_STATUS, cmd);
+}
 
 static void check_if_io_complete(uint8_t bus)
 {
-    struct dma_io_data *dma_data = &dma_io_data[bus];
-    struct drive *d = dma_data->drive;
-    if (d)
+    struct dma_io_data *dma_data_head = &dma_io_data[bus];
+    struct dma_io_data *dma_data = dma_data_head->next;
+
+    if (dma_data != dma_data_head)
     {
+        struct drive *d = &drives[dma_data->drive];
         uint8_t status = in_byte(d->bm_reg + IDE_BUS_MASTER_STATUS);
+
         if (status & 0x2)
         {
             /* TODO: error, reset the bus. */
@@ -60,10 +131,15 @@ static void check_if_io_complete(uint8_t bus)
             physical_addr_t buffer = dma_data->buffer;
             ide_on_io_complete_t func = dma_data->complete_func;
 
-            dma_data->drive = NULL;
-            dma_data->size = 0;
-            dma_data->buffer = 0;
-            dma_data->complete_func = NULL;
+            /* Remove from list and free the struct */
+            dma_data->prev->next = dma_data->next;
+            dma_data->next->prev = dma_data->prev;
+            dma_data->prev = dma_data->next = NULL;
+            slab_free(io_data_cache, dma_data);
+
+            /* Start next IO operation */
+            if (dma_data_head->next != dma_data_head)
+                start_io_operation(dma_data_head->next);
 
             func(buffer, size);
         }
@@ -185,6 +261,8 @@ void ide_initialize(uint16_t bm_dma)
         }
     }
 
+    initialize_io_data();
+
     /* Register idle function when there is one drive at least. */
     if (count > 0)
     {
@@ -203,48 +281,29 @@ static void dma_io_sectors(uint8_t drive, uint64_t start, uint16_t sector_count,
                            const struct ide_dma_io_data *data,
                            uint8_t bm_cmd, uint8_t cmd)
 {
-    struct drive *d = &drives[drive];
-    struct prd_entry *prdt_address = &prdt[d->bus];
-    struct dma_io_data *dma_data = &dma_io_data[d->bus];
+    struct dma_io_data *dma_data = slab_alloc(io_data_cache);
+    struct dma_io_data *dma_data_head = &dma_io_data[drives[drive].bus];
 
-    dma_data->drive = d;
     dma_data->size = data->size;
     dma_data->buffer = data->buffer;
     dma_data->complete_func = data->complete_func;
+    dma_data->drive = drive;
+    dma_data->bm_cmd = bm_cmd;
+    dma_data->cmd = cmd;
+    dma_data->start_sector = start;
+    dma_data->sector_count = sector_count;
 
-    /* Prepare PRDT */
-    prdt_address->physical_addr = data->buffer;
-    prdt_address->size = data->size;
-    prdt_address->reserved = 0x8000;    /* Set it as the last PRD entry */
-
-    /* Stop DMA first, and then send command. */
-    out_byte(d->bm_reg + IDE_BUS_MASTER_CMD, 0x0);
-    out_dword(d->bm_reg + IDE_BUS_MASTER_PRDT, CAST_VIRTUAL_TO_PHYSICAL(prdt_address));
-    out_byte(d->bm_reg + IDE_BUS_MASTER_CMD, bm_cmd | 0x1);
-
-    if (d->lba48)
+    if (dma_data_head->next == dma_data_head)
     {
-        out_byte(d->base_reg + IDE_REGISTER_DRIVE_SELECT, 0x40 | (d->drive << 4));
-        out_byte(d->base_reg + IDE_REGISTER_SECTOR_COUNT, (sector_count >> 8) & 0xff);
-        out_byte(d->base_reg + IDE_REGISTER_LBA_LO, (start >> 24) & 0xff);
-        out_byte(d->base_reg + IDE_REGISTER_LBA_MID, (start >> 32) & 0xff);
-        out_byte(d->base_reg + IDE_REGISTER_LBA_HI, (start >> 40) & 0xff);
-        out_byte(d->base_reg + IDE_REGISTER_SECTOR_COUNT, sector_count & 0xff);
-        out_byte(d->base_reg + IDE_REGISTER_LBA_LO, start & 0xff);
-        out_byte(d->base_reg + IDE_REGISTER_LBA_MID, (start >> 8) & 0xff);
-        out_byte(d->base_reg + IDE_REGISTER_LBA_HI, (start >> 16) & 0xff);
-    }
-    else
-    {
-        out_byte(d->base_reg + IDE_REGISTER_DRIVE_SELECT, 0xe0 | (d->drive << 4) | ((start >> 24) & 0x0f));
-        out_byte(d->base_reg + IDE_REGISTER_FEATURE_ERROR, 0);
-        out_byte(d->base_reg + IDE_REGISTER_SECTOR_COUNT, sector_count);
-        out_byte(d->base_reg + IDE_REGISTER_LBA_LO, start & 0xff);
-        out_byte(d->base_reg + IDE_REGISTER_LBA_MID, (start >> 8) & 0xff);
-        out_byte(d->base_reg + IDE_REGISTER_LBA_HI, (start >> 16) & 0xff);
+        /* List is empty, start IO operation. */
+        start_io_operation(dma_data);
     }
 
-    out_byte(d->base_reg + IDE_REGISTER_COMMAND_STATUS, cmd);
+    /* Insert into io data list. */
+    dma_data->prev = dma_data_head->prev;
+    dma_data->next = dma_data_head;
+    dma_data_head->prev->next = dma_data;
+    dma_data_head->prev = dma_data;
 }
 
 static void check_drive(uint8_t drive, uint64_t start, uint16_t sector_count,
@@ -262,10 +321,6 @@ static void check_drive(uint8_t drive, uint64_t start, uint16_t sector_count,
     if (io_data->size != sector_count * 512)
         panic("[IDE] - io buffer size(%u) != 512 * sector_count(%u).",
               io_data->size, sector_count);
-
-    /* Wait bus is not busy. */
-    while (dma_io_data[d->bus].drive)
-        check_if_io_complete(d->bus);
 }
 
 void ide_dma_read_sectors(uint8_t drive, uint64_t start, uint16_t sector_count,
