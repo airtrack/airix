@@ -38,16 +38,35 @@ struct kmem_cache
     struct kmem_cache *next;
 };
 
+#define KMEM_CACHE_SLAB_INIT(slab) \
+    { 0, 0, NULL, NULL, slab, slab, { 0 } }
+
+#define KMEM_CACHE_INIT(size, cache) \
+    { \
+        size, size, sizeof(void *), \
+        KMEM_CACHE_SLAB_INIT(&cache.full_slab), \
+        KMEM_CACHE_SLAB_INIT(&cache.partial_slab), \
+        KMEM_CACHE_SLAB_INIT(&cache.free_slab), \
+        &cache, &cache \
+    }
+
+#define KMALLOC_CACHE(size, index) \
+    KMEM_CACHE_INIT(size, kmalloc_caches[index])
+
 static struct kmem_cache kmem_cache_cache =
+KMEM_CACHE_INIT(sizeof(kmem_cache_cache), kmem_cache_cache);
+
+static struct kmem_cache kmalloc_caches[9] =
 {
-    sizeof(kmem_cache_cache), sizeof(kmem_cache_cache), sizeof(void *),
-    { 0, 0, NULL, NULL, &kmem_cache_cache.full_slab,
-        &kmem_cache_cache.full_slab, { 0 } },
-    { 0, 0, NULL, NULL, &kmem_cache_cache.partial_slab,
-        &kmem_cache_cache.partial_slab, { 0 } },
-    { 0, 0, NULL, NULL, &kmem_cache_cache.free_slab,
-        &kmem_cache_cache.free_slab, { 0 } },
-    &kmem_cache_cache, &kmem_cache_cache
+    KMALLOC_CACHE(4, 0),
+    KMALLOC_CACHE(8, 1),
+    KMALLOC_CACHE(16, 2),
+    KMALLOC_CACHE(32, 3),
+    KMALLOC_CACHE(64, 4),
+    KMALLOC_CACHE(128, 5),
+    KMALLOC_CACHE(256, 6),
+    KMALLOC_CACHE(512, 7),
+    KMALLOC_CACHE(1024, 8)
 };
 
 /* Slab list operations. */
@@ -261,4 +280,32 @@ void * slab_alloc(struct kmem_cache *cache)
 void slab_free(struct kmem_cache *cache, void *object)
 {
     free_object(cache, object);
+}
+
+static inline size_t kmalloc_index(size_t size)
+{
+    if (size <= 4) return 0;
+    if (size <= 8) return 1;
+    if (size <= 16) return 2;
+    if (size <= 32) return 3;
+    if (size <= 64) return 4;
+    if (size <= 128) return 5;
+    if (size <= 256) return 6;
+    if (size <= 512) return 7;
+    if (size <= 1024) return 8;
+    panic("[BUG] kmalloc: can not alloc memory for more than 1024.");
+    return 0;
+}
+
+void * kmalloc(size_t size)
+{
+    size_t index = kmalloc_index(size);
+    struct kmem_cache *cache = &kmalloc_caches[index];
+    return alloc_object(cache);
+}
+
+void kfree(void *ptr)
+{
+    struct slab_page *slab = VIRT_TO_PAGE(ptr);
+    free_object(slab->cache, ptr);
 }

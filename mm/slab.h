@@ -21,4 +21,10 @@ void * slab_alloc(struct kmem_cache *cache);
 /* Free an object into allocator */
 void slab_free(struct kmem_cache *cache, void *object);
 
+/* Alloc memory which size is not greater than 1024 */
+void * kmalloc(size_t size);
+
+/* Free memory which is allocated by kmalloc */
+void kfree(void *ptr);
+
 #endif /* SLAB_H */
