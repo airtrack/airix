@@ -2,7 +2,7 @@
 #define STDIO_H
 
 #include <kernel/base.h>
-#include <stdarg.h>
+#include <lib/stdarg.h>
 
 /*
  * Writes at most size - 1 of the characters printed into the output string(

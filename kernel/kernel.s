@@ -62,6 +62,7 @@ _start:
     sub     eax, 0xC0000000
     call    eax
     mov     esp, 0xC0010000
+    mov     ebp, esp
     mov     eax, kernel_entry
     jmp     eax
 
@@ -97,10 +98,12 @@ in_dword:
     ret
 
 insw:
-    mov     dx, word [esp + 4]
-    mov     ecx, dword [esp + 8]
-    mov     edi, dword [esp + 12]
+    push    edi
+    mov     dx, word [esp + 8]
+    mov     ecx, dword [esp + 12]
+    mov     edi, dword [esp + 16]
     rep     insw
+    pop     edi
     ret
 
 out_byte:

@@ -7,12 +7,16 @@ global memset
 memcpy:
     push    ebp
     mov     ebp, esp
+    push    edi
+    push    esi
     mov     edi, dword [ebp + 8]
     mov     esi, dword [ebp + 12]
     mov     ecx, dword [ebp + 16]
     cld
     rep     movsb
     mov     eax, dword [ebp + 8]
+    pop     esi
+    pop     edi
     pop     ebp
     ret
 
@@ -20,11 +24,13 @@ memcpy:
 memset:
     push    ebp
     mov     ebp, esp
+    push    edi
     mov     edi, dword [ebp + 8]
     mov     eax, dword [ebp + 12]
     mov     ecx, dword [ebp + 16]
     cld
     rep     stosb
     mov     eax, dword [ebp + 8]
+    pop     edi
     pop     ebp
     ret
