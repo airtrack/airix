@@ -229,7 +229,7 @@ void ide_initialize(uint16_t bm_dma)
     bool primary_exist = false;
     bool secondary_exist = false;
 
-    printk("[IDE] - find IDE:\n");
+    printk("[%-8s] find IDE:\n", "IDE");
 
     for (uint32_t bus = IDE_ATA_BUS_PRIMARY; bus < IDE_ATA_BUS_COUNT; ++bus)
     {
@@ -254,7 +254,7 @@ void ide_initialize(uint16_t bm_dma)
                 else secondary_exist = true;
 
                 uint32_t bytes = d->sectors * 512;
-                printk("  [ATA%u-%u] - %u bytes, model: %s\n",
+                printk("  [ATA%u-%u] %u bytes, model: %s\n",
                        d->bus, d->drive, bytes, d->model);
                 ++count;
             }
@@ -274,7 +274,7 @@ void ide_initialize(uint16_t bm_dma)
     if (primary_exist) pic_register_isr(IRQ14, irq_isr14);
     if (secondary_exist) pic_register_isr(IRQ15, irq_isr15);
 
-    printk("[IDE] - total drives %u.\n", count);
+    printk("[%-8s] total drives %u.\n", "IDE", count);
 }
 
 static void dma_io_sectors(uint8_t drive, uint64_t start, uint16_t sector_count,

@@ -15,4 +15,10 @@ void * memcpy(void *restrict dst, const void *restrict src, size_t n);
  */
 void * memset(void *b, int c, size_t len);
 
+/*
+ * Returns the number of characters that precede the terminating NUL character.
+ * Defined in strlen.c
+ */
+size_t strlen(const char *s);
+
 #endif /* STRING_H */

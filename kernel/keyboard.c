@@ -345,7 +345,7 @@ static void keyboard_handler()
 
 void kbd_initialize()
 {
-    printk("[keyboard] - self test %s!\n",
+    printk("[%-8s] self test %s.\n", "Keyboard",
            self_test() ? "succeeded" : "failed");
 
     key_states = 0;

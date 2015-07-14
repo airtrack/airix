@@ -121,7 +121,7 @@ void kernel_entry()
                               boot_info->num_mmap_entries);
 
     clear_screen();
-    printk("Init kernel ...\n");
+    printk("[%-8s] initialize kernel ...\n", "Entry");
 
     pmm_initialize(free, boot_info->mmap_entries, boot_info->num_mmap_entries);
 
@@ -134,7 +134,7 @@ void kernel_entry()
     pci_detecting_devices();
 
     pmm_print_statistics(boot_info->mmap_entries, boot_info->num_mmap_entries);
-    printk("Success!\n");
+    printk("[%-8s] success!\n\n", "Entry");
 
     pic_register_isr(IRQ0, test_isr_timer);
     test_install_keyboard();

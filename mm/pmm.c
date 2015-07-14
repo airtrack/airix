@@ -358,14 +358,14 @@ void pmm_print_statistics(struct mmap_entry *entries, uint32_t num)
     {
         for (uint32_t i = 0; i < num; ++i)
         {
-            printk("%d: %p - %p %d %d 0x%x\n", i,
-                   entries[i].base,
+            printk("[%-8s] %d: 0x%08x - 0x%08x %10u %u %x\n",
+                   "Memory", i, entries[i].base,
                    entries[i].base + entries[i].length,
                    entries[i].length, entries[i].type,
                    entries[i].acpi_attr);
         }
     }
 
-    printk("Total pages: %u, free pages: %u\n",
+    printk("[%-8s] total pages: %u, free pages: %u\n", "Memory",
            free_blocks->total_pages, free_blocks->num_pages);
 }
