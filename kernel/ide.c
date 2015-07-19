@@ -35,6 +35,7 @@ struct dma_io_data
     physical_addr_t buffer;
     ide_on_io_complete_t complete_func;
 
+    uint8_t retry;
     uint8_t drive;
     uint8_t bm_cmd;
     uint8_t cmd;
@@ -109,6 +110,26 @@ static void start_io_operation(const struct dma_io_data *data)
     out_byte(d->base_reg + IDE_REGISTER_COMMAND_STATUS, cmd);
 }
 
+static void complete_io_operation(struct dma_io_data *dma_data_head,
+                                  struct dma_io_data *dma_data, bool error)
+{
+    size_t size = dma_data->size;
+    physical_addr_t buffer = dma_data->buffer;
+    ide_on_io_complete_t func = dma_data->complete_func;
+
+    /* Remove from list and free the struct */
+    dma_data->prev->next = dma_data->next;
+    dma_data->next->prev = dma_data->prev;
+    dma_data->prev = dma_data->next = NULL;
+    slab_free(io_data_cache, dma_data);
+
+    /* Start next IO operation */
+    if (dma_data_head->next != dma_data_head)
+        start_io_operation(dma_data_head->next);
+
+    func(buffer, size, error);
+}
+
 static void check_if_io_complete(uint8_t bus)
 {
     struct dma_io_data *dma_data_head = &dma_io_data[bus];
@@ -121,27 +142,27 @@ static void check_if_io_complete(uint8_t bus)
 
         if (status & 0x2)
         {
-            /* TODO: error, reset the bus. */
+            /* Error, clear bus master status bit 1 */
             out_byte(d->bm_reg + IDE_BUS_MASTER_STATUS, 0x2);
+
+            /* Reset drives */
+            out_byte(d->control_reg, 0x4);
+            out_byte(d->control_reg, 0);
+
+            /* Retry if the error is the first occurrence */
+            if (dma_data->retry == 0)
+            {
+                dma_data->retry = 1;
+                start_io_operation(dma_data);
+            }
+            else
+            {
+                complete_io_operation(dma_data_head, dma_data, true);
+            }
         }
         else if (!(status & 0x1))
         {
-            /* IO completed */
-            size_t size = dma_data->size;
-            physical_addr_t buffer = dma_data->buffer;
-            ide_on_io_complete_t func = dma_data->complete_func;
-
-            /* Remove from list and free the struct */
-            dma_data->prev->next = dma_data->next;
-            dma_data->next->prev = dma_data->prev;
-            dma_data->prev = dma_data->next = NULL;
-            slab_free(io_data_cache, dma_data);
-
-            /* Start next IO operation */
-            if (dma_data_head->next != dma_data_head)
-                start_io_operation(dma_data_head->next);
-
-            func(buffer, size);
+            complete_io_operation(dma_data_head, dma_data, false);
         }
     }
 }
@@ -287,6 +308,7 @@ static void dma_io_sectors(uint8_t drive, uint64_t start, uint16_t sector_count,
     dma_data->size = data->size;
     dma_data->buffer = data->buffer;
     dma_data->complete_func = data->complete_func;
+    dma_data->retry = 0;
     dma_data->drive = drive;
     dma_data->bm_cmd = bm_cmd;
     dma_data->cmd = cmd;

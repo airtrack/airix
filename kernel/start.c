@@ -56,9 +56,15 @@ static bool writed = false;
 
 static void test_ide_drive_write();
 
-static void test_read_complete(physical_addr_t buffer, size_t size)
+static void test_read_complete(physical_addr_t buffer, size_t size, bool error)
 {
     char *data = CAST_PHYSICAL_TO_VIRTUAL(buffer);
+
+    if (error)
+    {
+        printk("Read data from ide to address %p error.\n", data);
+        return ;
+    }
 
     printk("Read complete address: %p, size: %u\n", data, size);
     for (size_t i = 0; i < 16; ++i)
@@ -79,9 +85,16 @@ static void test_ide_drive_read()
     ide_dma_read_sectors(0, 0, 1, &io_data);
 }
 
-static void test_write_complete(physical_addr_t buffer, size_t size)
+static void test_write_complete(physical_addr_t buffer, size_t size, bool error)
 {
     char *data = CAST_PHYSICAL_TO_VIRTUAL(buffer);
+
+    if (error)
+    {
+        printk("Write data to ide from address %p error.\n", data);
+        return ;
+    }
+
     memset(data, 0, size);
     test_ide_drive_read();
 }

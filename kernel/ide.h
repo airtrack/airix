@@ -73,8 +73,15 @@ enum ide_bus_master
     IDE_BUS_MASTER_PRDT = 4,
 };
 
-/* Function which will be called on DMA read/write are completed */
-typedef void (*ide_on_io_complete_t)(physical_addr_t, uint32_t);
+/*
+ * Function will be called on DMA read/write completed.
+ *   Prototype: void on_complete(physical_addr_t buffer,
+ *                               uint32_t buffer_size,
+ *                               bool error);
+ * Parameter error is set true to indicate an error is occur when
+ * doing read/write operation.
+ */
+typedef void (*ide_on_io_complete_t)(physical_addr_t, uint32_t, bool);
 
 /* IO data struct for DMA read/write */
 struct ide_dma_io_data
