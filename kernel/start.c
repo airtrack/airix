@@ -52,72 +52,57 @@ static void test_install_keyboard()
 }
 
 static unsigned char sector_data[512];
-static bool writed = false;
 
-static void test_ide_drive_write();
-
-static void test_read_complete(struct ide_dma_io *io_data, bool error)
+static void print_sector(unsigned char *data, size_t size)
 {
-    char *data = CAST_PHYSICAL_TO_VIRTUAL(io_data->buffer);
-
-    if (error)
-    {
-        printk("Read data from ide to address %p error.\n", data);
-        return ;
-    }
-
-    printk("Read complete address: %p, size: %u\n", data, io_data->size);
+    printk("Address: %p, size: %u\n", data, size);
     for (size_t i = 0; i < 16; ++i)
-        printk("%x ", data[i]++);
-    printk("\n");
-
-    if (!writed)
-        test_ide_drive_write();
-    writed = true;
+        printk("%x ", data[i]);
+    printk("...\n");
 }
 
-static void test_ide_drive_read()
+static bool test_ide_read_sector()
 {
-    struct ide_dma_io io_data;
+    struct ide_io io_data;
 
     io_data.drive = 0;
     io_data.start = 0;
     io_data.sector_count = 1;
     io_data.buffer = CAST_VIRTUAL_TO_PHYSICAL(sector_data);
     io_data.size = sizeof(sector_data);
-    io_data.data = NULL;
-    io_data.complete_func = test_read_complete;
 
-    ide_dma_read_sectors(&io_data);
+    return ide_read_sectors(&io_data);
 }
 
-static void test_write_complete(struct ide_dma_io *io_data, bool error)
+static bool test_ide_write_sector()
 {
-    char *data = CAST_PHYSICAL_TO_VIRTUAL(io_data->buffer);
+    struct ide_io io_data;
 
-    if (error)
+    io_data.drive = 0;
+    io_data.start = 0;
+    io_data.sector_count = 1;
+    io_data.buffer = CAST_VIRTUAL_TO_PHYSICAL(sector_data);
+    io_data.size = sizeof(sector_data);
+
+    return ide_write_sectors(&io_data);
+}
+
+static void test_ide_io()
+{
+    if (test_ide_read_sector())
     {
-        printk("Write data to ide from address %p error.\n", data);
-        return ;
+        print_sector(sector_data, sizeof(sector_data));
+
+        for (size_t i = 0; i < 16; ++i)
+            ++sector_data[i];
+
+        if (test_ide_write_sector() && test_ide_read_sector())
+            print_sector(sector_data, sizeof(sector_data));
     }
-
-    memset(data, 0, io_data->size);
-    test_ide_drive_read();
-}
-
-static void test_ide_drive_write()
-{
-    struct ide_dma_io io_data;
-
-    io_data.drive = 0;
-    io_data.start = 0;
-    io_data.sector_count = 1;
-    io_data.buffer = CAST_VIRTUAL_TO_PHYSICAL(sector_data);
-    io_data.size = sizeof(sector_data);
-    io_data.data = NULL;
-    io_data.complete_func = test_write_complete;
-
-    ide_dma_write_sectors(&io_data);
+    else
+    {
+        printk("Read data from ide to address %p error.\n", sector_data);
+    }
 }
 
 void init_paging(physical_addr_t bi)
@@ -163,7 +148,7 @@ void kernel_entry()
 
     pic_register_isr(IRQ0, test_isr_timer);
     test_install_keyboard();
-    test_ide_drive_read();
+    test_ide_io();
 
     start_int();
     kernel_main();

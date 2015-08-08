@@ -422,3 +422,42 @@ void ide_dma_write_sectors(const struct ide_dma_io *io_data)
         IDE_ATA_COMMAND_WRITE_DMA_EXT : IDE_ATA_COMMAND_WRITE_DMA;
     dma_io_sectors(io_data, BUS_MASTER_CMD_WRITE, cmd);
 }
+
+static void sync_io_complete(struct ide_dma_io *io_data, bool error)
+{
+    *(bool *)io_data->data = error;
+}
+
+static inline bool sync_io_sectors(const struct ide_io *io_data,
+                                   void (*io_func)(const struct ide_dma_io *))
+{
+    bool error = false;
+    struct ide_dma_io io;
+
+    io.drive = io_data->drive;
+    io.start = io_data->start;
+    io.sector_count = io_data->sector_count;
+    io.buffer = io_data->buffer;
+    io.size = io_data->size;
+    io.data = &error;
+    io.complete_func = sync_io_complete;
+
+    io_func(&io);
+
+    /* Wait io complete */
+    for (uint8_t bus = drives[io.drive].bus;
+         dma_io_data[bus].next != &dma_io_data[bus];)
+        check_if_io_complete(bus);
+
+    return !error;
+}
+
+bool ide_read_sectors(const struct ide_io *io_data)
+{
+    return sync_io_sectors(io_data, ide_dma_read_sectors);
+}
+
+bool ide_write_sectors(const struct ide_io *io_data)
+{
+    return sync_io_sectors(io_data, ide_dma_write_sectors);
+}
