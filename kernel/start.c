@@ -56,9 +56,9 @@ static bool writed = false;
 
 static void test_ide_drive_write();
 
-static void test_read_complete(physical_addr_t buffer, size_t size, bool error)
+static void test_read_complete(struct ide_dma_io *io_data, bool error)
 {
-    char *data = CAST_PHYSICAL_TO_VIRTUAL(buffer);
+    char *data = CAST_PHYSICAL_TO_VIRTUAL(io_data->buffer);
 
     if (error)
     {
@@ -66,7 +66,7 @@ static void test_read_complete(physical_addr_t buffer, size_t size, bool error)
         return ;
     }
 
-    printk("Read complete address: %p, size: %u\n", data, size);
+    printk("Read complete address: %p, size: %u\n", data, io_data->size);
     for (size_t i = 0; i < 16; ++i)
         printk("%x ", data[i]++);
     printk("\n");
@@ -78,16 +78,22 @@ static void test_read_complete(physical_addr_t buffer, size_t size, bool error)
 
 static void test_ide_drive_read()
 {
-    struct ide_dma_io_data io_data;
+    struct ide_dma_io io_data;
+
+    io_data.drive = 0;
+    io_data.start = 0;
+    io_data.sector_count = 1;
     io_data.buffer = CAST_VIRTUAL_TO_PHYSICAL(sector_data);
     io_data.size = sizeof(sector_data);
+    io_data.data = NULL;
     io_data.complete_func = test_read_complete;
-    ide_dma_read_sectors(0, 0, 1, &io_data);
+
+    ide_dma_read_sectors(&io_data);
 }
 
-static void test_write_complete(physical_addr_t buffer, size_t size, bool error)
+static void test_write_complete(struct ide_dma_io *io_data, bool error)
 {
-    char *data = CAST_PHYSICAL_TO_VIRTUAL(buffer);
+    char *data = CAST_PHYSICAL_TO_VIRTUAL(io_data->buffer);
 
     if (error)
     {
@@ -95,17 +101,23 @@ static void test_write_complete(physical_addr_t buffer, size_t size, bool error)
         return ;
     }
 
-    memset(data, 0, size);
+    memset(data, 0, io_data->size);
     test_ide_drive_read();
 }
 
 static void test_ide_drive_write()
 {
-    struct ide_dma_io_data io_data;
+    struct ide_dma_io io_data;
+
+    io_data.drive = 0;
+    io_data.start = 0;
+    io_data.sector_count = 1;
     io_data.buffer = CAST_VIRTUAL_TO_PHYSICAL(sector_data);
     io_data.size = sizeof(sector_data);
+    io_data.data = NULL;
     io_data.complete_func = test_write_complete;
-    ide_dma_write_sectors(0, 0, 1, &io_data);
+
+    ide_dma_write_sectors(&io_data);
 }
 
 void init_paging(physical_addr_t bi)
