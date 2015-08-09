@@ -7,6 +7,7 @@
 #include <kernel/exception.h>
 #include <kernel/keyboard.h>
 #include <kernel/console.h>
+#include <kernel/process.h>
 #include <kernel/klib.h>
 #include <mm/pmm.h>
 #include <mm/paging.h>
@@ -142,6 +143,7 @@ void kernel_entry()
     kbd_initialize();
     exception_handle_initialize();
     pci_detecting_devices();
+    proc_initialize();
 
     pmm_print_statistics(boot_info->mmap_entries, boot_info->num_mmap_entries);
     printk("[%-8s] success!\n\n", "Entry");
