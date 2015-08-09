@@ -141,8 +141,8 @@ void kernel_entry()
     pic_initialize();
     pit_initialize(50);
     kbd_initialize();
-    exception_handle_initialize();
-    pci_detecting_devices();
+    excep_initialize();
+    pci_initialize();
     proc_initialize();
 
     pmm_print_statistics(boot_info->mmap_entries, boot_info->num_mmap_entries);

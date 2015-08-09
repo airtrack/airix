@@ -5,6 +5,22 @@
 #define PCI_ENABLE_FLAG 0x80000000
 #define INVALID_VENDOR_ID 0xffff
 
+enum pci_config_port
+{
+    PCI_CONFIG_ADDRESS_PORT = 0xcf8,
+    PCI_CONFIG_DATA_PORT = 0xcfc
+};
+
+enum pci_class
+{
+    PCI_CLASS_MASS_STORAGE = 0x1
+};
+
+enum pci_subclass
+{
+    PCI_SUBCLASS_IDE = 0x1
+};
+
 static uint32_t config_read(uint32_t bus, uint32_t device,
                             uint32_t func, uint32_t offset)
 {
@@ -65,7 +81,7 @@ static void check_device(uint8_t bus, uint8_t device)
     }
 }
 
-void pci_detecting_devices()
+void pci_initialize()
 {
     for (uint32_t bus = 0; bus < 256; ++bus)
         for (uint32_t device = 0; device < 32; ++device)
