@@ -7,6 +7,8 @@
 /*
  * Init paging, the first step.
  * Returns the next free physical address.
+ * This function should run in physical address space, when it returns,
+ * kernel is running in virtual address space.
  */
 physical_addr_t pg_init_paging(physical_addr_t page_aligned_free);
 
