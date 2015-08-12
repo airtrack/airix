@@ -3,35 +3,14 @@
 
 #include <kernel/base.h>
 
-#pragma pack(push, 1)
-
-/* GDT entry */
-typedef struct
-{
-    uint16_t limit_0;
-    uint16_t base_0;
-    uint8_t base_1;
-    uint8_t access;
-    uint8_t limit_1:4;
-    uint8_t flags:4;
-    uint8_t base_2;
-} gdt_entry_t;
-
-/* GDTR register data */
-struct gdtr
-{
-    uint16_t limit;
-    gdt_entry_t *base;
-};
-
-#pragma pack(pop)
-
 /* Number of GDT entries */
-#define GDT_ENTRY_NUM 100
+#define GDT_ENTRY_NUM 6
 
 /* GDT selectors */
-#define GDT_FLAT_MEM_TEXT_SEL 0x8
-#define GDT_FLAT_MEM_DATA_SEL 0x10
+#define KERNEL_CODE_SELECTOR 0x8
+#define KERNEL_DATA_SELECTOR 0x10
+#define USER_CODE_SELECTOR 0x18
+#define USER_DATA_SELECTOR 0x20
 
 /* DPL values */
 enum dpl
@@ -44,5 +23,9 @@ enum dpl
 
 /* GDT init function */
 void gdt_initialize();
+
+/* Set GDT descriptor */
+void gdt_set_descriptor(uint16_t selector, uint32_t base,
+                        uint32_t limit, uint8_t exec, uint8_t dpl);
 
 #endif /* GDT_H */

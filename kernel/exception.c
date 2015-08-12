@@ -5,7 +5,7 @@
 
 static inline void setup_handle(uint8_t num, void *handle)
 {
-    idt_set_entry(num, GDT_FLAT_MEM_TEXT_SEL, handle, IDT_TYPE_INT, DPL_0);
+    idt_set_entry(num, KERNEL_CODE_SELECTOR, handle, IDT_TYPE_INT, DPL_0);
 }
 
 void excep_initialize()

@@ -5,7 +5,6 @@ extern pic_interrupt
 extern exception_handles
 
 global _start
-global get_gdtr
 global set_gdtr
 global set_idtr
 global in_byte
@@ -65,11 +64,6 @@ _start:
     mov     ebp, esp
     mov     eax, kernel_entry
     jmp     eax
-
-get_gdtr:
-    mov     eax, dword [esp + 4]
-    sgdt    [eax]
-    ret
 
 set_gdtr:
     mov     eax, dword [esp + 4]

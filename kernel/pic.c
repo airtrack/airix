@@ -28,7 +28,7 @@ static inline void register_isr_entry(uint8_t irq_line)
 {
     void *entry = isr_entry_table[irq_line];
     uint8_t idt_num = PIC_IDT_BASE_NUM + irq_line;
-    idt_set_entry(idt_num, GDT_FLAT_MEM_TEXT_SEL, entry, IDT_TYPE_INT, DPL_0);
+    idt_set_entry(idt_num, KERNEL_CODE_SELECTOR, entry, IDT_TYPE_INT, DPL_0);
 }
 
 static void default_handler()
