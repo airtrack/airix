@@ -123,14 +123,12 @@ goto_pm:
 
 [bits 32]
 protected_mode:
-    ; Prepare video selector
-    mov     ax, 0x18
-    mov     gs, ax
-    ; Other selectors
+    ; Set data selectors
     mov     ax, 0x10
     mov     ds, ax
     mov     es, ax
     mov     fs, ax
+    mov     gs, ax
     mov     ss, ax
     call    expand_kernel
     ; Store address of information which is passed to the kernel
@@ -232,13 +230,6 @@ gdt_start:
     dw      0xFFFF
     dw      0x0
     db      0x0
-    db      0x92
-    db      0xCF
-    db      0x0
-    ; Video descriptor
-    dw      0xFFFF
-    dw      0x8000
-    db      0x0B
     db      0x92
     db      0xCF
     db      0x0
