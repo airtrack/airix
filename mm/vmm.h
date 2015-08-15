@@ -92,4 +92,7 @@ physical_addr_t vmm_unmap_page(struct page_table *page_tab,
     return vmm_unmap_page_index(page_tab, vmm_pte_index(vaddr), flag);
 }
 
+void vmm_map(struct page_directory *page_dir, void *vaddr,
+             physical_addr_t paddr, uint32_t flag);
+
 #endif /* VMM_H */

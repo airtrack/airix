@@ -1,9 +1,25 @@
 #include <mm/vmm.h>
 #include <mm/pmm.h>
+#include <kernel/klib.h>
+
+static struct page_table * get_page_table(struct page_directory *page_dir,
+                                          void *vaddr)
+{
+    uint32_t pde_index = vmm_pde_index(vaddr);
+    physical_addr_t paddr = page_dir->entries[pde_index] & ~0xFFF;
+    if (paddr == 0) return NULL;
+    return CAST_PHYSICAL_TO_VIRTUAL(paddr);
+}
 
 struct page_directory * vmm_alloc_vaddr_space()
 {
-    return CAST_PHYSICAL_TO_VIRTUAL(pmm_alloc_page_address());
+    struct page_directory *page_dir =
+        CAST_PHYSICAL_TO_VIRTUAL(pmm_alloc_page_address());
+
+    for (uint32_t i = 0; i < NUM_PDE; ++i)
+        page_dir->entries[i] = VMM_WRITABLE;
+
+    return page_dir;
 }
 
 void vmm_free_vaddr_space(struct page_directory *page_dir)
@@ -14,7 +30,13 @@ void vmm_free_vaddr_space(struct page_directory *page_dir)
 
 struct page_table * vmm_alloc_page_table()
 {
-    return CAST_PHYSICAL_TO_VIRTUAL(pmm_alloc_page_address());
+    struct page_table *page_tab =
+        CAST_PHYSICAL_TO_VIRTUAL(pmm_alloc_page_address());
+
+    for (uint32_t i = 0; i < NUM_PTE; ++i)
+        page_tab->entries[i] = VMM_WRITABLE;
+
+    return page_tab;
 }
 
 void vmm_free_page_table(struct page_table *page_tab)
@@ -51,4 +73,21 @@ physical_addr_t vmm_unmap_page_index(struct page_table *page_tab,
     physical_addr_t paddr = page_tab->entries[index] & 0xFFFFF000;
     page_tab->entries[index] = (flag & 0xFFF) & ~VMM_PRESENT;
     return paddr;
+}
+
+void vmm_map(struct page_directory *page_dir, void *vaddr,
+             physical_addr_t paddr, uint32_t flag)
+{
+    struct page_table *page_tab = get_page_table(page_dir, vaddr);
+
+    if (!page_tab)
+    {
+        page_tab = vmm_alloc_page_table();
+        vmm_map_page_table(page_dir, vaddr, page_tab, flag);
+    }
+
+    if (page_tab->entries[vmm_pte_index(vaddr)] & VMM_PRESENT)
+        panic("Remap virtual address at %p.", vaddr);
+
+    vmm_map_page(page_tab, vaddr, paddr, flag);
 }
