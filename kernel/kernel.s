@@ -8,6 +8,7 @@ global _start
 global set_gdtr
 global set_idtr
 global set_cr3
+global set_tss
 global in_byte
 global in_dword
 global insw
@@ -82,6 +83,11 @@ set_cr3:
     mov     eax, cr0
     or      eax, 0x80000000
     mov     cr0, eax
+    ret
+
+set_tss:
+    mov     ax, word [esp + 4]
+    ltr     ax
     ret
 
 in_byte:

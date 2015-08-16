@@ -8,6 +8,7 @@
 #include <kernel/keyboard.h>
 #include <kernel/console.h>
 #include <kernel/process.h>
+#include <kernel/scheduler.h>
 #include <kernel/klib.h>
 #include <mm/pmm.h>
 #include <mm/paging.h>
@@ -144,6 +145,7 @@ void kernel_entry()
     excep_initialize();
     pci_initialize();
     proc_initialize();
+    sched_initialize();
 
     pmm_print_statistics(boot_info->mmap_entries, boot_info->num_mmap_entries);
     printk("[%-8s] success!\n\n", "Entry");

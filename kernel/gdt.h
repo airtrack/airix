@@ -11,6 +11,7 @@
 #define KERNEL_DATA_SELECTOR 0x10
 #define USER_CODE_SELECTOR 0x18
 #define USER_DATA_SELECTOR 0x20
+#define TSS_SELECTOR 0x28
 
 /* DPL values */
 enum dpl
@@ -24,8 +25,7 @@ enum dpl
 /* GDT init function */
 void gdt_initialize();
 
-/* Set GDT descriptor */
-void gdt_set_descriptor(uint16_t selector, uint32_t base,
-                        uint32_t limit, uint8_t exec, uint8_t dpl);
+/* Install TSS into GDT */
+void gdt_install_tss(uint32_t base, uint32_t limit);
 
 #endif /* GDT_H */

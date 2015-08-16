@@ -10,6 +10,9 @@ void set_idtr(const void *idtr);
 /* Setup paging directory */
 void set_cr3(physical_addr_t page_directory);
 
+/* Set TSS selector */
+void set_tss(uint16_t selector);
+
 /* IO functions */
 uint8_t in_byte(uint16_t port);
 uint32_t in_dword(uint16_t port);
