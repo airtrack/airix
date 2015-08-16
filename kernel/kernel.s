@@ -7,6 +7,7 @@ extern exception_handles
 global _start
 global set_gdtr
 global set_idtr
+global set_cr3
 global in_byte
 global in_dword
 global insw
@@ -15,7 +16,6 @@ global out_dword
 global close_int
 global start_int
 global halt
-global enable_paging
 
 global isr_entry0
 global isr_entry1
@@ -75,6 +75,15 @@ set_idtr:
     lidt    [eax]
     ret
 
+set_cr3:
+    mov     eax, dword [esp + 4]
+    mov     cr3, eax
+
+    mov     eax, cr0
+    or      eax, 0x80000000
+    mov     cr0, eax
+    ret
+
 in_byte:
     mov     edx, dword [esp + 4]
     xor     eax, eax
@@ -126,15 +135,6 @@ start_int:
 
 halt:
     hlt
-
-enable_paging:
-    mov     eax, dword [esp + 4]
-    mov     cr3, eax
-
-    mov     eax, cr0
-    or      eax, 0x80000000
-    mov     cr0, eax
-    ret
 
 %macro isr_entry 1
 

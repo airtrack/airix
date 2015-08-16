@@ -21,7 +21,7 @@ physical_addr_t pg_init_paging(physical_addr_t page_aligned_free)
      * Map virtual address to physical address:
      * [KERNEL_BASE, KERNEL_BASE + 4MB) to [0, 4MB),
      * [0, 4MB) to [0, 4MB).
-     * [0, 4MB) to [0, 4MB) is required when enable_paging returning
+     * [0, 4MB) to [0, 4MB) is required when set_cr3 returning
      */
     for (uint32_t i = 0; i < NUM_PDE; ++i)
         page_dir->entries[i] = VMM_WRITABLE;
@@ -39,7 +39,7 @@ physical_addr_t pg_init_paging(physical_addr_t page_aligned_free)
      * global symbols are virtual address, so we should convert virtual
      * address to physical address before we call it.
      */
-    VIRTUAL_TO_PHYSICAL(enable_paging)(page_dir);
+    VIRTUAL_TO_PHYSICAL(set_cr3)((physical_addr_t)page_dir);
 
     pg_dir = CAST_PHYSICAL_TO_VIRTUAL((physical_addr_t)page_dir);
     return page_aligned_free;
@@ -75,6 +75,9 @@ physical_addr_t pg_complete_paging(physical_addr_t page_aligned_free,
 
         page_aligned_free += PAGE_SIZE;
     }
+
+    /* Refresh paging directory */
+    set_cr3(CAST_VIRTUAL_TO_PHYSICAL(pg_dir));
 
     return page_aligned_free;
 }

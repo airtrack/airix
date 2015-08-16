@@ -3,10 +3,12 @@
 
 #include <kernel/base.h>
 
-/* Set/get GDTR/IDTR */
-void get_gdtr(void *gdtr);
+/* Set GDTR/IDTR */
 void set_gdtr(const void *gdtr);
 void set_idtr(const void *idtr);
+
+/* Setup paging directory */
+void set_cr3(physical_addr_t page_directory);
 
 /* IO functions */
 uint8_t in_byte(uint16_t port);
@@ -20,9 +22,6 @@ void close_int();
 void start_int();
 
 void halt();
-
-/* Setup paging */
-void enable_paging(void *page_directory);
 
 /* IRQ ISR entry */
 void isr_entry0();
