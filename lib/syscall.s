@@ -9,4 +9,4 @@
 
 %endmacro
 
-syscall 0 prints
+syscall 0, prints
