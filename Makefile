@@ -1,4 +1,6 @@
-.PHONY: all clean dir bootloader kernel a_img
+.PHONY: all clean dir bootloader kernel libc user a_img
+
+.PRECIOUS: %.o
 
 A_IMG = a.img
 BIN_DIR = bin
@@ -7,7 +9,7 @@ LIB_DIR = lib
 BOOTLOADER = bootloader.bin
 BOOTLOADER_ASM = $(wildcard bootloader/*.s)
 
-KERNEL_C = $(wildcard kernel/*.c) $(wildcard mm/*.c) $(wildcard lib/*.c)
+KERNEL_C = $(wildcard kernel/*.c) $(wildcard mm/*.c) $(filter-out lib/crt.c, $(wildcard lib/*.c))
 KERNEL_ASM = $(wildcard kernel/*.s) $(filter-out lib/syscall.s, $(wildcard lib/*.s))
 
 KERNEL = kernel.bin
@@ -16,13 +18,18 @@ KERNEL_OBJS = $(subst .c,.o,$(KERNEL_C)) $(subst .s,.o,$(KERNEL_ASM))
 LIBC = libc.a
 LIBC_OBJS = $(subst .c,.o,$(wildcard lib/*.c)) $(subst .s,.o,$(wildcard lib/*.s))
 
+USER_BIN = $(subst user,bin,$(subst .c,,$(wildcard user/*.c)))
+
 INCLUDE = -I. -Ilib
 CFLAGS = -std=c99 -m32 -Wall -Wextra -nostdinc -fno-builtin -fno-stack-protector $(INCLUDE)
+LFLAGS = -nostdlib -Llib -lc
 
-all: dir bootloader kernel libc a_img disk
+all: dir bootloader kernel libc user a_img disk
+
+user: libc $(USER_BIN)
 
 clean:
-	@ rm -f kernel/*.o mm/*.o lib/*.o lib/*.a $(BIN_DIR)/* $(A_IMG)
+	@ rm -f kernel/*.o mm/*.o lib/*.o lib/*.a user/*.o $(BIN_DIR)/* $(A_IMG)
 
 dir:
 	@ mkdir -p $(BIN_DIR)
@@ -38,6 +45,10 @@ kernel: $(KERNEL_OBJS)
 libc: $(LIBC_OBJS)
 	@ echo "ar $(LIB_DIR)/$(LIBC) ..."
 	@ ar -r $(LIB_DIR)/$(LIBC) $(LIBC_OBJS) > /dev/null 2>&1
+
+bin/%: user/%.o
+	@ echo "linking $@ ..."
+	@ gcc $(CFLAGS) $(LFLAGS) $< -o $@
 
 %.o : %.s
 	@ echo "compiling $< ..."
