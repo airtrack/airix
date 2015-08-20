@@ -26,6 +26,9 @@ void start_int();
 
 void halt();
 
+/* System call entry */
+void syscall_entry();
+
 /* IRQ ISR entry */
 void isr_entry0();
 void isr_entry1();

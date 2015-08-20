@@ -7,7 +7,7 @@ BOOTLOADER_ASM = $(wildcard bootloader/*.s)
 BOOTLOADER_BIN = bootloader.bin
 
 KERNEL_C = $(wildcard kernel/*.c) $(wildcard mm/*.c) $(wildcard lib/*.c)
-KERNEL_ASM = $(wildcard kernel/*.s) $(wildcard lib/*.s)
+KERNEL_ASM = $(wildcard kernel/*.s) $(filter-out lib/syscall.s, $(wildcard lib/*.s))
 
 KERNEL_COBJS = $(subst .c,.o,$(KERNEL_C))
 KERNEL_ASMOBJS = $(subst .s,.o,$(KERNEL_ASM))

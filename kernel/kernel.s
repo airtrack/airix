@@ -3,6 +3,7 @@ extern init_paging
 extern kernel_entry
 extern pic_interrupt
 extern exception_handles
+extern syscall
 
 global _start
 global set_gdtr
@@ -18,6 +19,7 @@ global close_int
 global start_int
 global halt
 
+global syscall_entry
 global isr_entry0
 global isr_entry1
 global isr_entry2
@@ -142,14 +144,53 @@ start_int:
 halt:
     hlt
 
+%macro interrupt_begin 0
+
+    pushad
+    push    ds
+    push    es
+    push    fs
+    push    gs
+
+    push    eax
+    ; 0x10 is kernel code descriptor selector
+    mov     ax, 0x10
+    mov     ds, ax
+    mov     es, ax
+    mov     fs, ax
+    mov     gs, ax
+    pop     eax
+
+%endmacro
+
+%macro interrupt_end 0
+
+    pop     gs
+    pop     fs
+    pop     es
+    pop     ds
+    popad
+
+%endmacro
+
+syscall_entry:
+    interrupt_begin
+
+    call    syscall
+
+    interrupt_end
+    iret
+
 %macro isr_entry 1
 
 isr_entry%1:
-    pushad
+    interrupt_begin
+
     push    %1
     call    pic_interrupt
     add     esp, 4
-    popad
+
+    interrupt_end
     iret
 
 %endmacro
@@ -172,7 +213,8 @@ isr_entry 14
 isr_entry 15
 
 isr_entry7:
-    pushad
+    interrupt_begin
+
     ; Read master PIC IRR(Interrupt Request Register)
     mov     al, 0x0A
     out     0x20, al
@@ -188,16 +230,19 @@ isr_entry7:
     push    7
     call    pic_interrupt
     add     esp, 4
+
 .spurious:
-    popad
+    interrupt_end
     iret
 
 %macro exception_entry 2
 
 %2:
-    pushad
+    interrupt_begin
+
     call    [exception_handles + %1 * 4]
-    popad
+
+    interrupt_end
     iret
 
 %endmacro
@@ -205,12 +250,14 @@ isr_entry7:
 %macro exception_entry_error_code 2
 
 %2:
-    pushad
+    interrupt_begin
+
     ; Push error code
     push    dword [esp + 32]
     call    [exception_handles + %1 * 4]
     add     esp, 4
-    popad
+
+    interrupt_end
     ; Skip error code
     add     esp, 4
     iret
@@ -239,7 +286,8 @@ exception_entry 20, virtualization_entry
 exception_entry_error_code 30, security_exception_entry
 
 page_fault_entry:
-    pushad
+    interrupt_begin
+
     ; Push error code
     push    dword [esp + 32]
     ; Push the virtual address which caused the page fault
@@ -247,7 +295,8 @@ page_fault_entry:
     push    eax
     call    [exception_handles + 14 * 4]
     add     esp, 8
-    popad
+
+    interrupt_end
     ; Skip error code
     add     esp, 4
     iret
