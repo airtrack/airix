@@ -1,7 +1,7 @@
 #include <kernel/elf.h>
 #include <mm/pmm.h>
 #include <mm/vmm.h>
-#include <lib/string.h>
+#include <string.h>
 
 #define EI_MAG0 0x7F
 #define EI_MAG1 'E'

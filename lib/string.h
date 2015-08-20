@@ -1,7 +1,7 @@
 #ifndef STRING_H
 #define STRING_H
 
-#include <kernel/base.h>
+#include <stddef.h>
 
 /*
  * Copy n bytes from memory area src to memory area dst.

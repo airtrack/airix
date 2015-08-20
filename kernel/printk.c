@@ -1,7 +1,7 @@
-#include <kernel/base.h>
 #include <kernel/klib.h>
-#include <lib/stdio.h>
-#include <lib/string.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
 
 #define VIDEO_MEMORY (KERNEL_BASE + 0xB8000)
 #define COLUMN 80

@@ -1,7 +1,7 @@
 #ifndef SLAB_H
 #define SLAB_H
 
-#include <kernel/base.h>
+#include <stddef.h>
 
 /*
  * Slab memory allocator for alloc kernel object

@@ -1,7 +1,8 @@
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
-#include <kernel/base.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 enum key_code
 {

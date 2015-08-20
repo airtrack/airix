@@ -1,5 +1,5 @@
 #include <kernel/klib.h>
-#include <lib/stdio.h>
+#include <stdio.h>
 
 static const char *desc = "An Internal error was detected.\
  The system has been halted.\nPlease restart computer.\n";

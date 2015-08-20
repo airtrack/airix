@@ -13,8 +13,8 @@ KERNEL_COBJS = $(subst .c,.o,$(KERNEL_C))
 KERNEL_ASMOBJS = $(subst .s,.o,$(KERNEL_ASM))
 KERNEL_BIN = kernel.bin
 
-INCLUDE = -I.
-CFLAGS = -std=c99 -m32 -Wall -Wextra -fno-builtin -fno-stack-protector $(INCLUDE)
+INCLUDE = -I. -Ilib
+CFLAGS = -std=c99 -m32 -Wall -Wextra -nostdinc -fno-builtin -fno-stack-protector $(INCLUDE)
 
 all: dir bootloader kernel a_img disk
 

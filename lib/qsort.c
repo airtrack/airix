@@ -1,5 +1,5 @@
-#include <kernel/base.h>
-#include <lib/string.h>
+#include <stdlib.h>
+#include <string.h>
 
 static void swap(void *left, void *right, size_t n)
 {
@@ -18,7 +18,7 @@ static void swap(void *left, void *right, size_t n)
 }
 
 static void insert_sort(void *base, size_t n, size_t width,
-        int (*compare)(const void *, const void *))
+                        int (*compare)(const void *, const void *))
 {
     for (size_t i = 1; i < n; ++i)
     {
@@ -32,7 +32,7 @@ static void insert_sort(void *base, size_t n, size_t width,
 }
 
 void qsort(void *base, size_t n, size_t width,
-        int (*compare)(const void *, const void *))
+           int (*compare)(const void *, const void *))
 {
     char pivot[width];
     char *pbase = base;

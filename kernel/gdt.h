@@ -1,7 +1,7 @@
 #ifndef GDT_H
 #define GDT_H
 
-#include <kernel/base.h>
+#include <stdint.h>
 
 /* Number of GDT entries */
 #define GDT_ENTRY_NUM 6

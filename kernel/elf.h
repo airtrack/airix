@@ -1,8 +1,9 @@
 #ifndef ELF_H
 #define ELF_H
 
-#include <kernel/base.h>
 #include <kernel/process.h>
+#include <stdbool.h>
+#include <stddef.h>
 
 /*
  * Expand elf content into process address space, and set

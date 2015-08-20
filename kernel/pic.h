@@ -1,7 +1,7 @@
 #ifndef PIC_H
 #define PIC_H
 
-#include <kernel/base.h>
+#include <stdint.h>
 
 /* Initialization Control Words */
 enum pic_icw1

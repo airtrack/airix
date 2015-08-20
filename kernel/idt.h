@@ -1,7 +1,7 @@
 #ifndef IDT_H
 #define IDT_H
 
-#include <kernel/base.h>
+#include <stdint.h>
 
 #pragma pack(push, 1)
 
@@ -43,6 +43,6 @@ void idt_initialize();
 
 /* Set IDT entry */
 void idt_set_entry(uint8_t entry_num, uint16_t selector,
-        void *offset, uint8_t type, uint8_t dpl);
+                   void *offset, uint8_t type, uint8_t dpl);
 
 #endif /* IDT_H */

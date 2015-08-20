@@ -13,7 +13,7 @@ void idt_initialize()
 }
 
 void idt_set_entry(uint8_t entry_num, uint16_t selector,
-        void *offset, uint8_t type, uint8_t dpl)
+                   void *offset, uint8_t type, uint8_t dpl)
 {
     struct idt_entry *entry = &idt[entry_num];
     entry->selector = selector;

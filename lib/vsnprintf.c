@@ -1,5 +1,5 @@
-#include <lib/stdio.h>
-#include <lib/string.h>
+#include <stdio.h>
+#include <string.h>
 #include <stdbool.h>
 
 static void reverse(char *buf, int len)

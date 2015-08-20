@@ -1,7 +1,7 @@
 #include <mm/pmm.h>
 #include <kernel/klib.h>
-#include <lib/stdlib.h>
-#include <lib/string.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define KERNEL_START_ADDRESS 0x100000
 

@@ -12,7 +12,7 @@
 #include <kernel/klib.h>
 #include <mm/pmm.h>
 #include <mm/paging.h>
-#include <lib/string.h>
+#include <string.h>
 
 struct boot_info
 {

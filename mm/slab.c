@@ -2,7 +2,7 @@
 #include <mm/pmm.h>
 #include <kernel/base.h>
 #include <kernel/klib.h>
-#include <lib/string.h>
+#include <string.h>
 
 #define VIRT_TO_PAGE(virt)  \
     (void *)((uint32_t)(virt) & ~(PAGE_SIZE - 1))

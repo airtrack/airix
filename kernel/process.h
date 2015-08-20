@@ -1,7 +1,7 @@
 #ifndef PROCESS_H
 #define PROCESS_H
 
-#include <kernel/base.h>
+#include <stdint.h>
 
 typedef uint16_t pid_t;
 

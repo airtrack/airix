@@ -1,7 +1,7 @@
 #ifndef STDLIB_H
 #define STDLIB_H
 
-#include <kernel/base.h>
+#include <stddef.h>
 
 /*
  * Sort an array of n objects, the initial member of which is
@@ -11,6 +11,6 @@
  * greater than the second.
  */
 void qsort(void *base, size_t n, size_t width,
-        int (*compare)(const void *, const void *));
+           int (*compare)(const void *, const void *));
 
 #endif /* STDLIB_H */
