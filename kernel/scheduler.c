@@ -41,3 +41,15 @@ void sched_initialize()
     gdt_install_tss(base, base + sizeof(tss));
     set_tss(TSS_SELECTOR | DPL_3);
 }
+
+void sched_process(struct process *proc)
+{
+    /* Update TSS */
+    tss.ss0 = KERNEL_DATA_SELECTOR;
+    tss.esp0 = proc->kernel_stack;
+
+    /* Change virtual address space */
+    set_cr3(CAST_VIRTUAL_TO_PHYSICAL(proc->page_dir));
+
+    /* TODO: Run process proc */
+}

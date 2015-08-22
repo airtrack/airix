@@ -136,6 +136,6 @@ bool elf_load_program(const char *elf_data, size_t size,
                        phentsize, phnum, proc))
         return false;
 
-    proc->entry = (void *)header->e_entry;
+    proc->entry = header->e_entry;
     return true;
 }

@@ -81,3 +81,11 @@ physical_addr_t pg_complete_paging(physical_addr_t page_aligned_free,
 
     return page_aligned_free;
 }
+
+void pg_copy_kernel_space(struct page_directory *vaddr_space)
+{
+    uint32_t kpde_start = vmm_pde_index((void *)KERNEL_BASE);
+
+    for (uint32_t i = kpde_start; i < NUM_PDE; ++i)
+        vaddr_space->entries[i] = pg_dir->entries[i];
+}

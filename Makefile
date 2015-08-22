@@ -67,3 +67,4 @@ a_img: bootloader kernel
 disk:
 	@ echo "making disk ..."
 	@ dd if=/dev/zero of=disk bs=512 count=20160 > /dev/null 2>&1
+	@ dd if=$(BIN_DIR)/init of=disk conv=notrunc bs=1 > /dev/null 2>&1
