@@ -1,17 +1,34 @@
 #include <kernel/process.h>
+#include <kernel/scheduler.h>
+#include <kernel/base.h>
 #include <kernel/klib.h>
 #include <kernel/elf.h>
 #include <kernel/idt.h>
 #include <kernel/gdt.h>
 #include <mm/vmm.h>
+#include <mm/pmm.h>
 #include <mm/slab.h>
 #include <mm/paging.h>
 #include <string.h>
 
+/*
+ * Addresses of process's stacks.
+ * Kernel stack address and user stack address should not be in the
+ * same page directory entry.
+ */
+#define PROC_KERNEL_STACK (KERNEL_BASE - 16 * PAGE_SIZE)
+#define PROC_USER_STACK (KERNEL_BASE - 1024 * PAGE_SIZE)
+
+/* System call INT number */
 #define SYSCALL_INT_NUM 0x80
 
 static struct kmem_cache *proc_cache;
 static pid_t pid;
+
+static pid_t generate_pid()
+{
+    return ++pid;
+}
 
 void proc_initialize()
 {
@@ -36,6 +53,24 @@ void proc_free(struct process *proc)
     slab_free(proc_cache, proc);
 }
 
+static void alloc_proc_stacks(struct process *proc)
+{
+    physical_addr_t kstack = pmm_alloc_page_address();
+    physical_addr_t ustack = pmm_alloc_page_address();
+
+    if (kstack == 0 || ustack == 0)
+        panic("Out of memory: alloc process stacks fail!");
+
+    proc->kernel_stack = PROC_KERNEL_STACK;
+    proc->user_stack = PROC_USER_STACK;
+
+    /* Map kernel stack and user stack */
+    vmm_map(proc->page_dir, (void *)(PROC_KERNEL_STACK - PAGE_SIZE),
+            kstack, VMM_WRITABLE);
+    vmm_map(proc->page_dir, (void *)(PROC_USER_STACK - PAGE_SIZE),
+            ustack, VMM_WRITABLE | VMM_USER);
+}
+
 bool proc_exec(const char *elf, size_t size)
 {
     struct process *proc = proc_alloc();
@@ -54,12 +89,12 @@ bool proc_exec(const char *elf, size_t size)
         return false;
     }
 
-    /* Generate a pid */
-    proc->pid = ++pid;
+    proc->pid = generate_pid();
 
-    /* TODO: prepare kernel stack and user stack */
+    /* Prepare kernel stack and user stack */
+    alloc_proc_stacks(proc);
 
-    /* TODO: scheduler execute process */
-
+    /* Schedule running process */
+    sched_process(proc);
     return true;
 }

@@ -3,6 +3,8 @@
 
 #include <kernel/base.h>
 
+struct trap_frame;
+
 /* Set GDTR/IDTR */
 void set_gdtr(const void *gdtr);
 void set_idtr(const void *idtr);
@@ -25,6 +27,9 @@ void close_int();
 void start_int();
 
 void halt();
+
+/* Returns to user space */
+void ret_user_space(struct trap_frame *frame);
 
 /* System call entry */
 void syscall_entry();

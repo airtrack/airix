@@ -18,7 +18,7 @@ global out_dword
 global close_int
 global start_int
 global halt
-
+global ret_user_space
 global syscall_entry
 global isr_entry0
 global isr_entry1
@@ -144,7 +144,7 @@ start_int:
 halt:
     hlt
 
-%macro interrupt_begin 0
+%macro int_enter 0
 
     pushad
     push    ds
@@ -152,18 +152,16 @@ halt:
     push    fs
     push    gs
 
-    push    eax
     ; 0x10 is kernel code descriptor selector
     mov     ax, 0x10
     mov     ds, ax
     mov     es, ax
     mov     fs, ax
     mov     gs, ax
-    pop     eax
 
 %endmacro
 
-%macro interrupt_end 0
+%macro int_ret 0
 
     pop     gs
     pop     fs
@@ -171,27 +169,37 @@ halt:
     pop     ds
     popad
 
+    ; Skip error code
+    add     esp, 4
+    iret
+
 %endmacro
 
+ret_user_space:
+    mov     esp, dword [esp + 4]
+    int_ret
+
 syscall_entry:
-    interrupt_begin
+    push    0
+    int_enter
 
+    push    esp
     call    syscall
+    add     esp, 4
 
-    interrupt_end
-    iret
+    int_ret
 
 %macro isr_entry 1
 
 isr_entry%1:
-    interrupt_begin
+    push    0
+    int_enter
 
     push    %1
     call    pic_interrupt
     add     esp, 4
 
-    interrupt_end
-    iret
+    int_ret
 
 %endmacro
 
@@ -213,7 +221,8 @@ isr_entry 14
 isr_entry 15
 
 isr_entry7:
-    interrupt_begin
+    push    0
+    int_enter
 
     ; Read master PIC IRR(Interrupt Request Register)
     mov     al, 0x0A
@@ -223,6 +232,7 @@ isr_entry7:
     in      al, 0x20
     nop
     nop
+
     ; Check bit 7
     and     al, 0x80
     ; If it is spurious IRQ, then just ignore it
@@ -232,71 +242,64 @@ isr_entry7:
     add     esp, 4
 
 .spurious:
-    interrupt_end
-    iret
+    int_ret
 
-%macro exception_entry 2
+%macro excep 2
 
 %2:
-    interrupt_begin
+    push    0
+    int_enter
 
     call    [exception_handles + %1 * 4]
 
-    interrupt_end
-    iret
+    int_ret
 
 %endmacro
 
-%macro exception_entry_error_code 2
+%macro excep_error_code 2
 
 %2:
-    interrupt_begin
+    int_enter
 
     ; Push error code
-    push    dword [esp + 32]
+    push    dword [esp + 48]
     call    [exception_handles + %1 * 4]
     add     esp, 4
 
-    interrupt_end
-    ; Skip error code
-    add     esp, 4
-    iret
+    int_ret
 
 %endmacro
 
 ; Exceptions entry
-exception_entry 0, divide_by_zero_entry
-exception_entry 1, debug_entry
-exception_entry 2, non_maskable_int_entry
-exception_entry 3, breakpoint_entry
-exception_entry 4, overflow_entry
-exception_entry 5, bound_range_exceeded_entry
-exception_entry 6, invalid_opcode_entry
-exception_entry 7, device_not_available_entry
-exception_entry_error_code 8, double_fault_entry
-exception_entry_error_code 10, invalid_tss_entry
-exception_entry_error_code 11, segment_not_present_entry
-exception_entry_error_code 12, stack_segment_fault_entry
-exception_entry_error_code 13, general_protection_fault_entry
-exception_entry 16, fp_exception_entry
-exception_entry_error_code 17, alignment_check_entry
-exception_entry 18, machine_check_entry
-exception_entry 19, simd_fp_exception_entry
-exception_entry 20, virtualization_entry
-exception_entry_error_code 30, security_exception_entry
+excep 0, divide_by_zero_entry
+excep 1, debug_entry
+excep 2, non_maskable_int_entry
+excep 3, breakpoint_entry
+excep 4, overflow_entry
+excep 5, bound_range_exceeded_entry
+excep 6, invalid_opcode_entry
+excep 7, device_not_available_entry
+excep 16, fp_exception_entry
+excep 18, machine_check_entry
+excep 19, simd_fp_exception_entry
+excep 20, virtualization_entry
+excep_error_code 8, double_fault_entry
+excep_error_code 10, invalid_tss_entry
+excep_error_code 11, segment_not_present_entry
+excep_error_code 12, stack_segment_fault_entry
+excep_error_code 13, general_protection_fault_entry
+excep_error_code 17, alignment_check_entry
+excep_error_code 30, security_exception_entry
 
 page_fault_entry:
-    interrupt_begin
+    int_enter
 
     ; Push error code
-    push    dword [esp + 32]
+    push    dword [esp + 48]
     ; Push the virtual address which caused the page fault
     mov     eax, cr2
     push    eax
     call    [exception_handles + 14 * 4]
     add     esp, 8
 
-    interrupt_end
-    ; Skip error code
-    add     esp, 4
-    iret
+    int_ret

@@ -68,8 +68,8 @@ void gdt_initialize()
 void gdt_install_tss(uint32_t base, uint32_t limit)
 {
     struct gdt_entry *descriptor = get_descriptor(TSS_SELECTOR);
-    set_base_limit(descriptor, base, limit);
+    set_base_limit(descriptor, base, limit - 1);
 
     descriptor->flags = 0;
-    descriptor->access = 0x89 | (DPL_3 << 5);
+    descriptor->access = 0x89 | (DPL_0 << 5);
 }

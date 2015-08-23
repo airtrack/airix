@@ -35,21 +35,56 @@ struct tss
 
 static struct tss tss;
 
-void sched_initialize()
+static inline void flush_tss()
 {
     uint32_t base = (uint32_t)&tss;
     gdt_install_tss(base, base + sizeof(tss));
-    set_tss(TSS_SELECTOR | DPL_3);
+    set_tss(TSS_SELECTOR);
+}
+
+void sched_initialize()
+{
+    flush_tss();
+}
+
+static void init_trap_frame(struct process *proc)
+{
+    char *stack = (char *)proc->kernel_stack;
+    proc->trap = (struct trap_frame *)(stack - sizeof(*proc->trap));
+
+    /* Initialize segment reigsters */
+    proc->trap->gs = USER_DATA_SELECTOR | DPL_3;
+    proc->trap->fs = USER_DATA_SELECTOR | DPL_3;
+    proc->trap->es = USER_DATA_SELECTOR | DPL_3;
+    proc->trap->ds = USER_DATA_SELECTOR | DPL_3;
+
+    proc->trap->ss = USER_DATA_SELECTOR | DPL_3;
+    proc->trap->cs = USER_CODE_SELECTOR | DPL_3;
+
+    /* Initialize user stack, entry point and interrupt flag */
+    proc->trap->user_esp = proc->user_stack;
+    proc->trap->eflags = FLAGS_IF;
+    proc->trap->eip = proc->entry;
+    proc->trap->error_code = 0;
 }
 
 void sched_process(struct process *proc)
 {
+    /* Close interrupt, interrupt will be enabled by iret */
+    close_int();
+
     /* Update TSS */
     tss.ss0 = KERNEL_DATA_SELECTOR;
     tss.esp0 = proc->kernel_stack;
+    flush_tss();
 
     /* Change virtual address space */
     set_cr3(CAST_VIRTUAL_TO_PHYSICAL(proc->page_dir));
 
-    /* TODO: Run process proc */
+    /* Prepare trap frame */
+    if (!proc->trap)
+        init_trap_frame(proc);
+
+    /* Returns to user space, run user process */
+    ret_user_space(proc->trap);
 }
