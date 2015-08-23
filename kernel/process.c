@@ -34,7 +34,7 @@ void proc_initialize()
 {
     /* Prepare syscall for user process */
     idt_set_entry(SYSCALL_INT_NUM, KERNEL_CODE_SELECTOR,
-                  syscall_entry, IDT_TYPE_INT, DPL_0);
+                  syscall_entry, IDT_TYPE_INT, DPL_3);
 
     proc_cache = slab_create_kmem_cache(
         sizeof(struct process), sizeof(void *));

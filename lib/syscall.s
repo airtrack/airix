@@ -2,6 +2,7 @@
 
 %macro syscall 2
 
+global %2
 %2:
     mov     eax, %1
     int     0x80

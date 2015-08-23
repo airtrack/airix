@@ -3,6 +3,7 @@
 .PRECIOUS: %.o
 
 A_IMG = a.img
+DISK = disk
 BIN_DIR = bin
 LIB_DIR = lib
 
@@ -29,7 +30,7 @@ all: dir bootloader kernel libc user a_img disk
 user: libc $(USER_BIN)
 
 clean:
-	@ rm -f kernel/*.o mm/*.o lib/*.o lib/*.a user/*.o $(BIN_DIR)/* $(A_IMG)
+	@ rm -f kernel/*.o mm/*.o lib/*.o lib/*.a user/*.o $(BIN_DIR)/* $(A_IMG) $(DISK)
 
 dir:
 	@ mkdir -p $(BIN_DIR)
@@ -48,7 +49,7 @@ libc: $(LIBC_OBJS)
 
 bin/%: user/%.o
 	@ echo "linking $@ ..."
-	@ gcc $(CFLAGS) $(LFLAGS) $< -o $@
+	@ gcc $(CFLAGS) $< $(LFLAGS) -o $@
 
 %.o : %.s
 	@ echo "compiling $< ..."
@@ -65,6 +66,6 @@ a_img: bootloader kernel
 	@ dd if=$(BIN_DIR)/$(KERNEL) of=$(A_IMG) seek=512 conv=notrunc bs=1 > /dev/null 2>&1
 
 disk:
-	@ echo "making disk ..."
-	@ dd if=/dev/zero of=disk bs=512 count=20160 > /dev/null 2>&1
-	@ dd if=$(BIN_DIR)/init of=disk conv=notrunc bs=1 > /dev/null 2>&1
+	@ echo "making $(DISK) ..."
+	@ dd if=/dev/zero of=$(DISK) bs=512 count=20160 > /dev/null 2>&1
+	@ dd if=$(BIN_DIR)/init of=$(DISK) conv=notrunc bs=1 > /dev/null 2>&1
