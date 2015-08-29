@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef uint16_t pid_t;
+typedef short pid_t;
 
 #define FLAGS_IF (1 << 9)
 

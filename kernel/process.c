@@ -43,13 +43,40 @@ void proc_initialize()
 struct process * proc_alloc()
 {
     struct process *proc = slab_alloc(proc_cache);
-    memset(proc, 0, sizeof(*proc));
+    if (proc) memset(proc, 0, sizeof(*proc));
     return proc;
 }
 
 void proc_free(struct process *proc)
 {
-    /* TODO: free page directory and page tables */
+    /* Free virtual address space */
+    if (proc->page_dir)
+    {
+        struct page_directory *page_dir = proc->page_dir;
+
+        /* Free all user space memory pages */
+        for (uint32_t pde = 0; pde < KERNEL_BASE / (NUM_PTE * PAGE_SIZE); ++pde)
+        {
+            struct page_table *page_table =
+                vmm_unmap_page_table_index(page_dir, pde, 0);
+
+            if (page_table)
+            {
+                for (uint32_t pte = 0; pte < NUM_PTE; ++pte)
+                {
+                    physical_addr_t paddr =
+                        vmm_unmap_page_index(page_table, pte, 0);
+                    if (paddr != 0)
+                        pmm_free_page_address(paddr);
+                }
+
+                vmm_free_page_table(page_table);
+            }
+        }
+
+        vmm_free_vaddr_space(page_dir);
+    }
+
     slab_free(proc_cache, proc);
 }
 

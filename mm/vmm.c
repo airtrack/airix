@@ -5,7 +5,7 @@
 static struct page_table * get_page_table(struct page_directory *page_dir,
                                           void *vaddr)
 {
-    uint32_t pde_index = vmm_pde_index(vaddr);
+    uint32_t pde_index = VMM_PDE_INDEX(vaddr);
     physical_addr_t paddr = page_dir->entries[pde_index] & ~0xFFF;
     if (paddr == 0) return NULL;
     return CAST_PHYSICAL_TO_VIRTUAL(paddr);
@@ -56,7 +56,8 @@ struct page_table * vmm_unmap_page_table_index(struct page_directory *page_dir,
                                                uint32_t index, uint32_t flag)
 {
     physical_addr_t paddr = page_dir->entries[index] & 0xFFFFF000;
-    struct page_table *page_tab = CAST_PHYSICAL_TO_VIRTUAL(paddr);
+    struct page_table *page_tab =
+        paddr == 0 ? NULL : CAST_PHYSICAL_TO_VIRTUAL(paddr);
     page_dir->entries[index] = (flag & 0xFFF) & ~VMM_PRESENT;
     return page_tab;
 }
@@ -86,7 +87,7 @@ void vmm_map(struct page_directory *page_dir, void *vaddr,
         vmm_map_page_table(page_dir, vaddr, page_tab, flag);
     }
 
-    if (page_tab->entries[vmm_pte_index(vaddr)] & VMM_PRESENT)
+    if (page_tab->entries[VMM_PTE_INDEX(vaddr)] & VMM_PRESENT)
         panic("Remap virtual address at %p.", vaddr);
 
     vmm_map_page(page_tab, vaddr, paddr, flag);

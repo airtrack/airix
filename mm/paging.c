@@ -30,7 +30,7 @@ physical_addr_t pg_init_paging(physical_addr_t page_aligned_free)
 
     page_dir->entries[0] =
         (pde_t)page_tab | VMM_WRITABLE | VMM_PRESENT;
-    page_dir->entries[vmm_pde_index((void *)KERNEL_BASE)] =
+    page_dir->entries[VMM_PDE_INDEX((void *)KERNEL_BASE)] =
         (pde_t)page_tab | VMM_WRITABLE | VMM_PRESENT;
 
     /*
@@ -69,7 +69,7 @@ physical_addr_t pg_complete_paging(physical_addr_t page_aligned_free,
                 | VMM_WRITABLE | VMM_PRESENT;
 
         /* Fill page directory entry */
-        pg_dir->entries[vmm_pde_index((void *)virtual_addr)] =
+        pg_dir->entries[VMM_PDE_INDEX((void *)virtual_addr)] =
             (pde_t)CAST_VIRTUAL_TO_PHYSICAL(pg_tab)
             | VMM_WRITABLE | VMM_PRESENT;
 
@@ -84,7 +84,7 @@ physical_addr_t pg_complete_paging(physical_addr_t page_aligned_free,
 
 void pg_copy_kernel_space(struct page_directory *vaddr_space)
 {
-    uint32_t kpde_start = vmm_pde_index((void *)KERNEL_BASE);
+    uint32_t kpde_start = VMM_PDE_INDEX((void *)KERNEL_BASE);
 
     for (uint32_t i = kpde_start; i < NUM_PDE; ++i)
         vaddr_space->entries[i] = pg_dir->entries[i];
