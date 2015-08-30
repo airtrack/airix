@@ -68,11 +68,19 @@ static bool load_from_prog_header(const char *elf_data, size_t size,
         physical_addr_t paddr = pmm_alloc_page_address();
         void *dest = CAST_PHYSICAL_TO_VIRTUAL(paddr + page_offset);
 
+        /* Out of memory, load fail */
+        if (!paddr) return false;
+
         /* Fill zero in page */
         memset(CAST_PHYSICAL_TO_VIRTUAL(paddr), 0, PAGE_SIZE);
 
         /* Map memory page */
-        vmm_map(proc->page_dir, (void *)vaddr, paddr, VMM_WRITABLE | VMM_USER);
+        if (!vmm_map(proc->page_dir, (void *)vaddr,
+                     paddr, VMM_WRITABLE | VMM_USER))
+        {
+            pmm_free_page_address(paddr);
+            return false;
+        }
 
         if (file_size != 0)
         {

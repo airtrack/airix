@@ -14,10 +14,13 @@ static struct page_table * get_page_table(struct page_directory *page_dir,
 struct page_directory * vmm_alloc_vaddr_space()
 {
     struct page_directory *page_dir =
-        CAST_PHYSICAL_TO_VIRTUAL(pmm_alloc_page_address());
+        CAST_P2V_OR_NULL(pmm_alloc_page_address());
 
-    for (uint32_t i = 0; i < NUM_PDE; ++i)
-        page_dir->entries[i] = VMM_WRITABLE;
+    if (page_dir)
+    {
+        for (uint32_t i = 0; i < NUM_PDE; ++i)
+            page_dir->entries[i] = VMM_WRITABLE;
+    }
 
     return page_dir;
 }
@@ -31,10 +34,13 @@ void vmm_free_vaddr_space(struct page_directory *page_dir)
 struct page_table * vmm_alloc_page_table()
 {
     struct page_table *page_tab =
-        CAST_PHYSICAL_TO_VIRTUAL(pmm_alloc_page_address());
+        CAST_P2V_OR_NULL(pmm_alloc_page_address());
 
-    for (uint32_t i = 0; i < NUM_PTE; ++i)
-        page_tab->entries[i] = VMM_WRITABLE;
+    if (page_tab)
+    {
+        for (uint32_t i = 0; i < NUM_PTE; ++i)
+            page_tab->entries[i] = VMM_WRITABLE;
+    }
 
     return page_tab;
 }
@@ -76,7 +82,7 @@ physical_addr_t vmm_unmap_page_index(struct page_table *page_tab,
     return paddr;
 }
 
-void vmm_map(struct page_directory *page_dir, void *vaddr,
+bool vmm_map(struct page_directory *page_dir, void *vaddr,
              physical_addr_t paddr, uint32_t flag)
 {
     struct page_table *page_tab = get_page_table(page_dir, vaddr);
@@ -84,6 +90,10 @@ void vmm_map(struct page_directory *page_dir, void *vaddr,
     if (!page_tab)
     {
         page_tab = vmm_alloc_page_table();
+
+        /* Out of memory */
+        if (!page_tab) return false;
+
         vmm_map_page_table(page_dir, vaddr, page_tab, flag);
     }
 
@@ -91,4 +101,5 @@ void vmm_map(struct page_directory *page_dir, void *vaddr,
         panic("Remap virtual address at %p.", vaddr);
 
     vmm_map_page(page_tab, vaddr, paddr, flag);
+    return true;
 }

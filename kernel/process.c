@@ -57,20 +57,20 @@ void proc_free(struct process *proc)
         /* Free all user space memory pages */
         for (uint32_t pde = 0; pde < KERNEL_BASE / (NUM_PTE * PAGE_SIZE); ++pde)
         {
-            struct page_table *page_table =
+            struct page_table *page_tab =
                 vmm_unmap_page_table_index(page_dir, pde, 0);
 
-            if (page_table)
+            if (page_tab)
             {
                 for (uint32_t pte = 0; pte < NUM_PTE; ++pte)
                 {
                     physical_addr_t paddr =
-                        vmm_unmap_page_index(page_table, pte, 0);
+                        vmm_unmap_page_index(page_tab, pte, 0);
                     if (paddr != 0)
                         pmm_free_page_address(paddr);
                 }
 
-                vmm_free_page_table(page_table);
+                vmm_free_page_table(page_tab);
             }
         }
 
@@ -80,22 +80,56 @@ void proc_free(struct process *proc)
     slab_free(proc_cache, proc);
 }
 
-static void alloc_proc_stacks(struct process *proc)
+static bool alloc_proc_stacks(struct process *proc)
 {
-    physical_addr_t kstack = pmm_alloc_page_address();
-    physical_addr_t ustack = pmm_alloc_page_address();
+    physical_addr_t stack = pmm_alloc_page_address();
+    if (!stack) return false;
 
-    if (kstack == 0 || ustack == 0)
-        panic("Out of memory: alloc process stacks fail!");
+    /* Map kernel stack */
+    if (!vmm_map(proc->page_dir, (void *)(PROC_KERNEL_STACK - PAGE_SIZE),
+                 stack, VMM_WRITABLE))
+    {
+        pmm_free_page_address(stack);
+        return false;
+    }
 
+    stack = pmm_alloc_page_address();
+    if (!stack) return false;
+
+    /* Map user stack */
+    if (!vmm_map(proc->page_dir, (void *)(PROC_USER_STACK - PAGE_SIZE),
+                 stack, VMM_WRITABLE | VMM_USER))
+    {
+        pmm_free_page_address(stack);
+        return false;
+    }
+
+    /* Setup addresses */
     proc->kernel_stack = PROC_KERNEL_STACK;
     proc->user_stack = PROC_USER_STACK;
+    return true;
+}
 
-    /* Map kernel stack and user stack */
-    vmm_map(proc->page_dir, (void *)(PROC_KERNEL_STACK - PAGE_SIZE),
-            kstack, VMM_WRITABLE);
-    vmm_map(proc->page_dir, (void *)(PROC_USER_STACK - PAGE_SIZE),
-            ustack, VMM_WRITABLE | VMM_USER);
+static bool init_proc_from_elf(struct process *proc,
+                               const char *elf, size_t size)
+{
+    /* Prepare virtual address space */
+    proc->page_dir = vmm_alloc_vaddr_space();
+
+    if (!proc->page_dir)
+        return false;
+
+    /* Load program into process */
+    if (!elf_load_program(elf, size, proc))
+        return false;
+
+    /* Prepare kernel stack and user stack */
+    if (!alloc_proc_stacks(proc))
+        return false;
+
+    pg_copy_kernel_space(proc->page_dir);
+    proc->pid = generate_pid();
+    return true;
 }
 
 bool proc_exec(const char *elf, size_t size)
@@ -105,21 +139,11 @@ bool proc_exec(const char *elf, size_t size)
     if (!proc)
         return false;
 
-    /* Prepare virtual address space and map kernel space */
-    proc->page_dir = vmm_alloc_vaddr_space();
-    pg_copy_kernel_space(proc->page_dir);
-
-    /* Load program into process */
-    if (!elf_load_program(elf, size, proc))
+    if (!init_proc_from_elf(proc, elf, size))
     {
         proc_free(proc);
         return false;
     }
-
-    proc->pid = generate_pid();
-
-    /* Prepare kernel stack and user stack */
-    alloc_proc_stacks(proc);
 
     /* Schedule running process */
     sched_process(proc);
