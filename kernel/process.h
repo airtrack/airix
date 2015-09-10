@@ -7,6 +7,7 @@
 
 typedef short pid_t;
 
+#define PROC_MAX_NUM 1024
 #define FLAGS_IF (1 << 9)
 
 /* Trap information on stack when interrupt */

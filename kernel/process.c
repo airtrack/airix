@@ -23,11 +23,34 @@
 #define SYSCALL_INT_NUM 0x80
 
 static struct kmem_cache *proc_cache;
-static pid_t pid;
 
-static pid_t generate_pid()
+/* PID bitmap */
+static char pid_map[PROC_MAX_NUM / 8];
+
+/* PID generator */
+static pid_t pid_gen;
+
+static pid_t alloc_pid()
 {
-    return ++pid;
+    for (uint32_t i = 0; i < PROC_MAX_NUM; ++i)
+    {
+        pid_t pid = pid_gen;
+        pid_gen = (pid_gen + 1) % PROC_MAX_NUM;
+
+        /* Check if pid is avail */
+        if (!(pid_map[pid / 8] & (1 << (pid % 8))))
+        {
+            pid_map[pid / 8] |= (1 << (pid % 8));
+            return pid;
+        }
+    }
+
+    return -1;
+}
+
+static void free_pid(pid_t pid)
+{
+    pid_map[pid / 8] &= ~(1 << (pid % 8));
 }
 
 void proc_initialize()
@@ -43,7 +66,19 @@ void proc_initialize()
 struct process * proc_alloc()
 {
     struct process *proc = slab_alloc(proc_cache);
-    if (proc) memset(proc, 0, sizeof(*proc));
+    if (!proc)
+        return NULL;
+
+    memset(proc, 0, sizeof(*proc));
+    proc->pid = alloc_pid();
+
+    /* Alloc PID fail */
+    if (proc->pid == -1)
+    {
+        proc_free(proc);
+        return NULL;
+    }
+
     return proc;
 }
 
@@ -76,6 +111,10 @@ void proc_free(struct process *proc)
 
         vmm_free_vaddr_space(page_dir);
     }
+
+    /* Release PID */
+    if (proc->pid != -1)
+        free_pid(proc->pid);
 
     slab_free(proc_cache, proc);
 }
@@ -128,7 +167,6 @@ static bool init_proc_from_elf(struct process *proc,
         return false;
 
     pg_copy_kernel_space(proc->page_dir);
-    proc->pid = generate_pid();
     return true;
 }
 
