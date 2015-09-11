@@ -109,7 +109,7 @@ void pic_disable_irq(uint8_t irq_line)
 }
 
 /* Notify PIC interrupt is done */
-static inline void send_eoi(uint8_t irq_line)
+void pic_send_eoi(uint8_t irq_line)
 {
     if (irq_line >= IRQ8)
         out_byte(PIC_SLAVE_CMD_STATUS, PIC_OCW2_EOI);
@@ -121,7 +121,7 @@ static inline void send_eoi(uint8_t irq_line)
 void pic_interrupt(uint8_t irq_line)
 {
     isr_table[irq_line]();
-    send_eoi(irq_line);
+    pic_send_eoi(irq_line);
 }
 
 void pic_register_isr(uint8_t irq_line, pic_isr_t isr)

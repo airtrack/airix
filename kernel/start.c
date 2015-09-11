@@ -23,12 +23,6 @@ struct boot_info
 
 static struct boot_info *boot_info;
 
-static void test_isr_timer()
-{
-    static char c = 0;
-    put_char_at(18, 0, c++);
-}
-
 static void test_console_char_consumer(console_char_t c, void *data)
 {
     (void)data;
@@ -72,8 +66,6 @@ static void test_exec()
     {
         printk("Execute process fail!\n");
     }
-
-    printk("Test load executable file success.\n");
 }
 
 void init_paging(physical_addr_t bi)
@@ -122,11 +114,9 @@ void kernel_entry()
 
     printk("[%-8s] success!\n\n", "Entry");
 
-    pic_register_isr(IRQ0, test_isr_timer);
     test_install_keyboard();
-
-    start_int();
     test_exec();
+    sched();
 
     kernel_main();
 }

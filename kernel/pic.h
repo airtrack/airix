@@ -79,6 +79,9 @@ void pic_initialize();
 void pic_enable_irq(uint8_t irq_line);
 void pic_disable_irq(uint8_t irq_line);
 
+/* Send EOI to PIC */
+void pic_send_eoi(uint8_t irq_line);
+
 /* Register ISR(Interrupt Service Routine) */
 typedef void (*pic_isr_t)();
 void pic_register_isr(uint8_t irq_line, pic_isr_t isr);

@@ -1,6 +1,7 @@
 #include <kernel/scheduler.h>
 #include <kernel/klib.h>
 #include <kernel/gdt.h>
+#include <kernel/pic.h>
 
 struct tss
 {
@@ -35,6 +36,9 @@ struct tss
 
 static struct tss tss;
 
+static struct process list_head;
+static struct process *current_proc;
+
 static inline void flush_tss()
 {
     uint32_t base = (uint32_t)&tss;
@@ -42,9 +46,23 @@ static inline void flush_tss()
     set_tss(TSS_SELECTOR);
 }
 
+static void sched_timer()
+{
+    /*
+     * Send EOI first, because sched
+     * will run into the user space of a process
+     */
+    pic_send_eoi(IRQ0);
+    sched();
+}
+
 void sched_initialize()
 {
+    list_head.prev = &list_head;
+    list_head.next = &list_head;
+
     flush_tss();
+    pic_register_isr(IRQ0, sched_timer);
 }
 
 static void init_trap_frame(struct process *proc)
@@ -68,6 +86,14 @@ static void init_trap_frame(struct process *proc)
     proc->trap->error_code = 0;
 }
 
+void sched_add(struct process *proc)
+{
+    proc->next = list_head.next;
+    proc->prev = list_head.next->prev;
+    list_head.next->prev = proc;
+    list_head.next = proc;
+}
+
 void sched_process(struct process *proc)
 {
     /* Close interrupt, interrupt will be enabled by iret */
@@ -86,5 +112,18 @@ void sched_process(struct process *proc)
         init_trap_frame(proc);
 
     /* Returns to user space, run user process */
+    current_proc = proc;
     ret_user_space(proc->trap);
+}
+
+void sched()
+{
+    struct process *proc =
+        current_proc ? current_proc->next : list_head.next;
+
+    /* Find a runnable process */
+    while (proc == &list_head || proc->state != PROC_STATE_RUNNING)
+        proc = proc->next;
+
+    sched_process(proc);
 }

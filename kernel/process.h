@@ -40,15 +40,25 @@ struct trap_frame
     uint32_t ss;
 };
 
+enum proc_state
+{
+    PROC_STATE_RUNNING = 1,
+    PROC_STATE_DEAD,
+};
+
 struct process
 {
     pid_t pid;                  /* Process ID */
+    char *name;                 /* Process name, NULL terminated string */
+    enum proc_state state;      /* Process state */
     void *page_dir;             /* Virtual address space of process */
     struct trap_frame *trap;    /* Pointer to trap frame on stack */
     uint32_t entry;             /* Entry of process */
     uint32_t kernel_stack;      /* End address of process kernel stack */
     uint32_t user_stack;        /* End address of process user stack */
     struct process *parent;     /* Process's parent */
+    struct process *prev;       /* Previous process in list */
+    struct process *next;       /* Next process in list */
 };
 
 void proc_initialize();

@@ -183,7 +183,9 @@ bool proc_exec(const char *elf, size_t size)
         return false;
     }
 
-    /* Schedule running process */
-    sched_process(proc);
+    proc->state = PROC_STATE_RUNNING;
+
+    /* Add into scheduler */
+    sched_add(proc);
     return true;
 }
