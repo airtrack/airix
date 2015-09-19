@@ -9,6 +9,7 @@
 #include <kernel/console.h>
 #include <kernel/process.h>
 #include <kernel/scheduler.h>
+#include <kernel/ktask.h>
 #include <kernel/klib.h>
 #include <mm/pmm.h>
 #include <mm/paging.h>
@@ -82,8 +83,6 @@ void init_paging(physical_addr_t bi)
     boot_info->free_addr = free;
 }
 
-void kernel_main();
-
 /* Kernel entry */
 void kernel_entry()
 {
@@ -108,6 +107,7 @@ void kernel_entry()
     pci_initialize();
     proc_initialize();
     sched_initialize();
+    ktask_initialize();
 
     pmm_print_statistics(boot_info->mmap_entries,
                          boot_info->num_mmap_entries);
@@ -117,6 +117,4 @@ void kernel_entry()
     test_install_keyboard();
     test_exec();
     scheduler();
-
-    kernel_main();
 }

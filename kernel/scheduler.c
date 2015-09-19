@@ -88,11 +88,22 @@ static void init_context(struct process *proc)
 {
     /* We already in process space, so we can use the stack of process */
     char *esp = NULL;
-    init_trap_frame(proc);
 
-    /* Setup real process entry */
-    esp = (char *)proc->trap - sizeof(void *);
-    *(uint32_t *)esp = (uint32_t)proc_real_entry;
+    if (proc->pid == 0)
+    {
+        /* Kernel task process */
+        esp = (char *)proc->kernel_stack - sizeof(void *);
+        *(uint32_t *)esp = proc->entry;
+    }
+    else
+    {
+        /* User process */
+        init_trap_frame(proc);
+
+        /* Setup real process entry */
+        esp = (char *)proc->trap - sizeof(void *);
+        *(uint32_t *)esp = (uint32_t)proc_real_entry;
+    }
 
     /* Initialize all context registers for process */
     esp -= sizeof(*proc->context);

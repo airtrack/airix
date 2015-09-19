@@ -85,20 +85,4 @@ void clear_screen();
 void printk(const char *fmt, ...);
 void panic(const char *fmt, ...);
 
-/* Idle function data struct */
-struct kernel_idle
-{
-    void (*idle_func)(void *);  /* Idle function */
-    void *data;                 /* Idle function parameter */
-    struct kernel_idle *prev;
-    struct kernel_idle *next;
-};
-
-/*
- * Register/unregister kernel idle function.
- * Hold kernel_idle struct when it register, release until unregister.
- */
-void register_kernel_idle(struct kernel_idle *idle);
-void unregister_kernel_idle(struct kernel_idle *idle);
-
 #endif /* KLIB_H */

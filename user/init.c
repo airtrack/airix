@@ -2,10 +2,7 @@
 
 int main()
 {
-    prints("We are in user process call syscall.\n");
-    prints("We are in user process call syscall again.\n");
-    prints("We are in user process call syscall again again.\n");
-
-    for (;;);
+    for (;;)
+        prints("Run in user process call syscall\n");
     return 0;
 }

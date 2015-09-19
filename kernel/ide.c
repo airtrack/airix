@@ -1,4 +1,5 @@
 #include <kernel/ide.h>
+#include <kernel/ktask.h>
 #include <kernel/klib.h>
 #include <kernel/pic.h>
 #include <mm/slab.h>
@@ -114,7 +115,7 @@ struct dma_io_data
 static struct drive drives[IDE_ATA_BUS_COUNT * IDE_ATA_DRIVE_COUNT];
 static struct prd_entry prdt[IDE_ATA_BUS_COUNT];
 static struct dma_io_data dma_io_data[IDE_ATA_BUS_COUNT];
-static struct kernel_idle ide_idle;
+static struct kernel_task ide_task;
 static struct kmem_cache *io_data_cache;
 
 static void initialize_io_data()
@@ -230,7 +231,7 @@ static void check_if_io_complete(uint8_t bus)
     }
 }
 
-static void idle_function(void *data)
+static void task_function(void *data)
 {
     (void)data;
 
@@ -347,12 +348,12 @@ void ide_initialize(uint16_t bm_dma)
 
     initialize_io_data();
 
-    /* Register idle function when there is one drive at least. */
+    /* Register task function when there is one drive at least. */
     if (count > 0)
     {
-        ide_idle.idle_func = idle_function;
-        ide_idle.data = NULL;
-        register_kernel_idle(&ide_idle);
+        ide_task.task_func = task_function;
+        ide_task.data = NULL;
+        ktask_register(&ide_task);
     }
 
     if (primary_exist) pic_register_isr(IRQ14, irq_isr14);
