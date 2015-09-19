@@ -116,7 +116,7 @@ void kernel_entry()
 
     test_install_keyboard();
     test_exec();
-    sched();
+    scheduler();
 
     kernel_main();
 }

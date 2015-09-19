@@ -28,6 +28,11 @@ void start_int();
 
 void halt();
 
+/* Switch kernel stack context */
+struct kstack_context;
+void switch_kcontext(struct kstack_context **cur,
+                     struct kstack_context *new);
+
 /* Returns to user space */
 void ret_user_space(struct trap_frame *frame);
 

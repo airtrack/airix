@@ -18,6 +18,7 @@ global out_dword
 global close_int
 global start_int
 global halt
+global switch_kcontext
 global ret_user_space
 global syscall_entry
 global isr_entry0
@@ -143,6 +144,31 @@ start_int:
 
 halt:
     hlt
+
+; Switch kernel stack, prototype in c:
+;     void switch_kcontext(struct kstack_context **cur,
+;                          struct kstack_context *new);
+switch_kcontext:
+    mov     ecx, dword [esp + 4]    ; cur
+    mov     eax, dword [esp + 8]    ; new
+
+    ; Save registers of struct kstack_context
+    push    edi
+    push    esi
+    push    ebp
+    push    ebx
+
+    ; Switch stack
+    mov     [ecx], esp              ; Save esp to *cur
+    mov     esp, eax                ; Restore esp from new
+
+    ; Restore registers of struct kstack_context
+    pop     ebx
+    pop     ebp
+    pop     esi
+    pop     edi
+
+    ret
 
 %macro int_enter 0
 

@@ -10,6 +10,15 @@ typedef short pid_t;
 #define PROC_MAX_NUM 1024
 #define FLAGS_IF (1 << 9)
 
+/* Kernel stack context of each process */
+struct kstack_context
+{
+    uint32_t ebx;
+    uint32_t ebp;
+    uint32_t esi;
+    uint32_t edi;
+};
+
 /* Trap information on stack when interrupt */
 struct trap_frame
 {
@@ -48,17 +57,18 @@ enum proc_state
 
 struct process
 {
-    pid_t pid;                  /* Process ID */
-    char *name;                 /* Process name, NULL terminated string */
-    enum proc_state state;      /* Process state */
-    void *page_dir;             /* Virtual address space of process */
-    struct trap_frame *trap;    /* Pointer to trap frame on stack */
-    uint32_t entry;             /* Entry of process */
-    uint32_t kernel_stack;      /* End address of process kernel stack */
-    uint32_t user_stack;        /* End address of process user stack */
-    struct process *parent;     /* Process's parent */
-    struct process *prev;       /* Previous process in list */
-    struct process *next;       /* Next process in list */
+    pid_t pid;                      /* Process ID */
+    char *name;                     /* Process name, NULL terminated string */
+    enum proc_state state;          /* Process state */
+    void *page_dir;                 /* Virtual address space of process */
+    struct trap_frame *trap;        /* Pointer to trap frame on stack */
+    struct kstack_context *context; /* Store the esp of stack */
+    uint32_t entry;                 /* Entry of process */
+    uint32_t kernel_stack;          /* End address of process kernel stack */
+    uint32_t user_stack;            /* End address of process user stack */
+    struct process *parent;         /* Process's parent */
+    struct process *prev;           /* Previous process in list */
+    struct process *next;           /* Next process in list */
 };
 
 void proc_initialize();
