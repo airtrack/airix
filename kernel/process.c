@@ -189,3 +189,82 @@ bool proc_exec(const char *elf, size_t size)
     sched_add(proc);
     return true;
 }
+
+static bool init_proc_from_proc(struct process *clone,
+                                const struct process *proc)
+{
+    /* Prepare virtual address space */
+    clone->page_dir = vmm_alloc_vaddr_space();
+
+    if (!clone->page_dir)
+        return false;
+
+    /* Copy user space */
+    for (uint32_t pde = 0; pde < KERNEL_BASE / (NUM_PTE * PAGE_SIZE); ++pde)
+    {
+        uint32_t tab_flag = 0;
+        struct page_table *page_tab =
+            vmm_get_page_table_index(proc->page_dir, pde, &tab_flag);
+
+        if (page_tab)
+        {
+            struct page_table *clone_tab = vmm_alloc_page_table();
+            if (!clone_tab)
+                return false;
+
+            /*
+             * Map the cloned page table and copy all pages in the page
+             * table to the cloned page table
+             */
+            vmm_map_page_table_index(clone->page_dir, pde, clone_tab, tab_flag);
+            for (uint32_t pte = 0; pte < NUM_PTE; ++pte)
+            {
+                uint32_t page_flag = 0;
+                physical_addr_t page =
+                    vmm_get_page_index(page_tab, pte, &page_flag);
+
+                if (page)
+                {
+                    physical_addr_t clone_page = pmm_alloc_page_address();
+                    if (!clone_page)
+                        return false;
+
+                    /* Copy memory page */
+                    memcpy(CAST_PHYSICAL_TO_VIRTUAL(clone_page),
+                           CAST_PHYSICAL_TO_VIRTUAL(page), PAGE_SIZE);
+
+                    vmm_map_page_index(clone_tab, pte, clone_page, page_flag);
+                }
+            }
+        }
+    }
+
+    /* Copy kernel space */
+    pg_copy_kernel_space(clone->page_dir);
+    return true;
+}
+
+struct process * proc_clone(struct process *proc)
+{
+    struct process *clone = proc_alloc();
+
+    if (!clone)
+        return NULL;
+
+    if (!init_proc_from_proc(clone, proc))
+    {
+        proc_free(clone);
+        return NULL;
+    }
+
+    clone->state = PROC_STATE_RUNNING;
+    clone->context = proc->context;
+    clone->entry = proc->entry;
+    clone->kernel_stack = proc->kernel_stack;
+    clone->user_stack = proc->user_stack;
+    clone->parent = proc;
+
+    /* Add the clone process into scheduler */
+    sched_add(clone);
+    return clone;
+}

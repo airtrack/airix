@@ -15,7 +15,6 @@ static void ktask_main()
         struct kernel_task *task = task_head.next;
         for (; task != &task_head; task = task->next)
             task->task_func(task->data);
-        printk("Run in kernel task process\n");
 
         close_int();
         sched();

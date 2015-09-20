@@ -52,6 +52,9 @@ void vmm_map_page_table_index(struct page_directory *page_dir, uint32_t index,
 struct page_table * vmm_unmap_page_table_index(struct page_directory *page_dir,
                                                uint32_t index, uint32_t flag);
 
+struct page_table * vmm_get_page_table_index(struct page_directory *page_dir,
+                                             uint32_t index, uint32_t *flag);
+
 static inline
 void vmm_map_page_table(struct page_directory *page_dir, void *vaddr,
                         struct page_table *page_tab, uint32_t flag)
@@ -71,6 +74,9 @@ void vmm_map_page_index(struct page_table *page_tab, uint32_t index,
 
 physical_addr_t vmm_unmap_page_index(struct page_table *page_tab,
                                      uint32_t index, uint32_t flag);
+
+physical_addr_t vmm_get_page_index(struct page_table *page_tab,
+                                   uint32_t index, uint32_t *flag);
 
 static inline
 void vmm_map_page(struct page_table *page_tab, void *vaddr,

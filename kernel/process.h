@@ -66,6 +66,7 @@ struct process
     uint32_t entry;                 /* Entry of process */
     uint32_t kernel_stack;          /* End address of process kernel stack */
     uint32_t user_stack;            /* End address of process user stack */
+    uint32_t syscall_retvalue;      /* Return value of syscall */
     struct process *parent;         /* Process's parent */
     struct process *prev;           /* Previous process in list */
     struct process *next;           /* Next process in list */
@@ -76,5 +77,7 @@ struct process * proc_alloc();
 void proc_free(struct process *proc);
 
 bool proc_exec(const char *elf, size_t size);
+
+struct process * proc_clone(struct process *proc);
 
 #endif /* PROCESS_H */

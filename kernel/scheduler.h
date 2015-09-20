@@ -12,6 +12,9 @@ void sched_add(struct process *proc);
 /* Schedule to scheduler */
 void sched();
 
+/* Syscall fork */
+pid_t sched_fork();
+
 /* Run the scheduler */
 void scheduler();
 

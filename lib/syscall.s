@@ -11,3 +11,4 @@ global %2
 %endmacro
 
 syscall 0, prints
+syscall 1, fork

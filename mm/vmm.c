@@ -6,9 +6,7 @@ static struct page_table * get_page_table(struct page_directory *page_dir,
                                           void *vaddr)
 {
     uint32_t pde_index = VMM_PDE_INDEX(vaddr);
-    physical_addr_t paddr = page_dir->entries[pde_index] & ~0xFFF;
-    if (paddr == 0) return NULL;
-    return CAST_PHYSICAL_TO_VIRTUAL(paddr);
+    return CAST_P2V_OR_NULL(page_dir->entries[pde_index] & 0xFFFFF000);
 }
 
 struct page_directory * vmm_alloc_vaddr_space()
@@ -61,11 +59,17 @@ void vmm_map_page_table_index(struct page_directory *page_dir, uint32_t index,
 struct page_table * vmm_unmap_page_table_index(struct page_directory *page_dir,
                                                uint32_t index, uint32_t flag)
 {
-    physical_addr_t paddr = page_dir->entries[index] & 0xFFFFF000;
     struct page_table *page_tab =
-        paddr == 0 ? NULL : CAST_PHYSICAL_TO_VIRTUAL(paddr);
+        CAST_P2V_OR_NULL(page_dir->entries[index] & 0xFFFFF000);
     page_dir->entries[index] = (flag & 0xFFF) & ~VMM_PRESENT;
     return page_tab;
+}
+
+struct page_table * vmm_get_page_table_index(struct page_directory *page_dir,
+                                             uint32_t index, uint32_t *flag)
+{
+    if (flag) *flag = page_dir->entries[index] & 0xFFF;
+    return CAST_P2V_OR_NULL(page_dir->entries[index] & 0xFFFFF000);
 }
 
 void vmm_map_page_index(struct page_table *page_tab, uint32_t index,
@@ -80,6 +84,13 @@ physical_addr_t vmm_unmap_page_index(struct page_table *page_tab,
     physical_addr_t paddr = page_tab->entries[index] & 0xFFFFF000;
     page_tab->entries[index] = (flag & 0xFFF) & ~VMM_PRESENT;
     return paddr;
+}
+
+physical_addr_t vmm_get_page_index(struct page_table *page_tab,
+                                   uint32_t index, uint32_t *flag)
+{
+    if (flag) *flag = page_tab->entries[index] & 0xFFF;
+    return page_tab->entries[index] & 0xFFFFF000;
 }
 
 bool vmm_map(struct page_directory *page_dir, void *vaddr,

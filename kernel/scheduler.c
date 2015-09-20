@@ -34,11 +34,14 @@ struct tss
     uint16_t iomap;
 };
 
+typedef void (*sched_task_t)(struct process *);
+
 static struct kstack_context *sched_context;
 static struct tss tss;
 
 static struct process list_head;
 static struct process *current_proc;
+static sched_task_t sched_task;
 
 static inline void flush_tss()
 {
@@ -136,6 +139,27 @@ void sched()
     switch_kcontext(&current_proc->context, sched_context);
 }
 
+static void sched_task_fork(struct process *parent)
+{
+    struct process *child = proc_clone(parent);
+    if (child)
+    {
+        parent->syscall_retvalue = (uint32_t)child->pid;
+        child->syscall_retvalue = 0;
+    }
+    else
+    {
+        parent->syscall_retvalue = (uint32_t)-1;
+    }
+}
+
+pid_t sched_fork()
+{
+    sched_task = sched_task_fork;
+    sched();
+    return (pid_t)current_proc->syscall_retvalue;
+}
+
 void scheduler()
 {
     for (;;)
@@ -162,5 +186,12 @@ void scheduler()
             init_context(proc);
 
         switch_kcontext(&sched_context, proc->context);
+
+        /* Call schedule task */
+        if (sched_task)
+        {
+            sched_task(current_proc);
+            sched_task = NULL;
+        }
     }
 }

@@ -164,6 +164,13 @@ static inline size_t snprint_pointer(char *buf, size_t size, void *ptr,
     return copy_with_padding(buf, size, str, len, left, padding, width);
 }
 
+int snprintf(char *str, size_t size, const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    return vsnprintf(str, size, fmt, ap);
+}
+
 int vsnprintf(char *str, size_t size, const char *fmt, va_list ap)
 {
     char *cur = str;
