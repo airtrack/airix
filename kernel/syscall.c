@@ -27,11 +27,18 @@ static uint32_t sys_exit(va_list ap)
     return 0;
 }
 
+static uint32_t sys_getpid(va_list ap)
+{
+    (void)ap;
+    return sched_get_running_proc()->pid;
+}
+
 static syscall_t syscalls[] =
 {
     sys_prints,
     sys_fork,
-    sys_exit
+    sys_exit,
+    sys_getpid
 };
 
 void syscall(struct trap_frame *trap)

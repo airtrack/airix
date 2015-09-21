@@ -13,3 +13,4 @@ global %2
 syscall 0, prints
 syscall 1, fork
 syscall 2, exit
+syscall 3, getpid

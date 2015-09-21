@@ -21,4 +21,7 @@ pid_t fork();
  */
 void exit(int status);
 
+/* Get the calling process ID. */
+pid_t getpid();
+
 #endif /* AIRIX_H */

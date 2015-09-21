@@ -15,7 +15,10 @@ int main()
         }
         else if (pid == 0)
         {
-            prints("After call fork, child process.\n");
+            char buffer[256] = { 0 };
+            snprintf(buffer, sizeof(buffer),
+                     "After call fork, child process, pid: %d.\n", getpid());
+            prints(buffer);
             return 0;
         }
         else
