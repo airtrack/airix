@@ -19,10 +19,19 @@ static uint32_t sys_fork(va_list ap)
     return (uint32_t)sched_fork();
 }
 
+static uint32_t sys_exit(va_list ap)
+{
+    (void)ap;
+    proc_exit(sched_get_running_proc(), va_arg(ap, int));
+    panic("sys_exit should not return.");
+    return 0;
+}
+
 static syscall_t syscalls[] =
 {
     sys_prints,
-    sys_fork
+    sys_fork,
+    sys_exit
 };
 
 void syscall(struct trap_frame *trap)

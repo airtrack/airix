@@ -15,4 +15,10 @@ typedef int pid_t;
  */
 pid_t fork();
 
+/*
+ * Terminate the calling process.
+ * The value status is returned to the parent as the process's exit status.
+ */
+void exit(int status);
+
 #endif /* AIRIX_H */

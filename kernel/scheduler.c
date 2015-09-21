@@ -134,6 +134,14 @@ void sched_add(struct process *proc)
     list_head.next = proc;
 }
 
+void sched_remove(struct process *proc)
+{
+    proc->prev->next = proc->next;
+    proc->next->prev = proc->prev;
+    proc->prev = NULL;
+    proc->next = NULL;
+}
+
 void sched()
 {
     switch_kcontext(&current_proc->context, sched_context);
@@ -160,6 +168,11 @@ pid_t sched_fork()
     return (pid_t)current_proc->syscall_retvalue;
 }
 
+struct process * sched_get_running_proc()
+{
+    return current_proc;
+}
+
 void scheduler()
 {
     for (;;)
@@ -169,7 +182,20 @@ void scheduler()
 
         /* Find a runnable process */
         while (proc == &list_head || proc->state != PROC_STATE_RUNNING)
-            proc = proc->next;
+        {
+            if (proc != &list_head && proc->state == PROC_STATE_DEAD)
+            {
+                /* Release the dead process */
+                struct process *dead = proc;
+                proc = proc->next;
+                sched_remove(dead);
+                proc_free(dead);
+            }
+            else
+            {
+                proc = proc->next;
+            }
+        }
 
         close_int();
         current_proc = proc;

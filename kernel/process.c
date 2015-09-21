@@ -268,3 +268,10 @@ struct process * proc_clone(struct process *proc)
     sched_add(clone);
     return clone;
 }
+
+void proc_exit(struct process *proc, int status)
+{
+    proc->status = status;
+    proc->state = PROC_STATE_DEAD;
+    sched();
+}

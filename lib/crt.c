@@ -1,6 +1,8 @@
+#include <airix.h>
+
 extern int main();
 
 void _start()
 {
-    main();
+    exit(main());
 }
