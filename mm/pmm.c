@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define KERNEL_STACK_ADDRESS 0x10000
 #define KERNEL_START_ADDRESS 0x100000
 
 enum page_flag
@@ -287,6 +288,14 @@ static void lock_boot_pages(void *boot_end)
         pages[i].flags |= PAGE_FLAG_LOCK;
 }
 
+static void lock_kernel_stack()
+{
+    uint32_t end_num = PAGE_NUMBER(KERNEL_STACK_ADDRESS);
+
+    for (uint32_t i = 0; i < end_num; ++i)
+        pages[i].flags |= PAGE_FLAG_LOCK;
+}
+
 static void lock_kernel_pages()
 {
     /* Lock [page of kernel start, page of boot free address) */
@@ -332,6 +341,7 @@ static void init_pages(struct mmap_entry *entries, uint32_t num)
 
     /* Lock used memory pages */
     lock_boot_pages(entries + num);
+    lock_kernel_stack();
     lock_kernel_pages();
 
     /* Init all free pages */
