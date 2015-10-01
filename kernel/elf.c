@@ -67,6 +67,7 @@ static bool load_from_prog_header(const char *elf_data, size_t size,
         size_t sz_in_page = PAGE_SIZE - page_offset;
         physical_addr_t paddr = pmm_alloc_page_address();
         void *dest = CAST_PHYSICAL_TO_VIRTUAL(paddr + page_offset);
+        int extra_pages = 0;
 
         /* Out of memory, load fail */
         if (!paddr) return false;
@@ -75,12 +76,14 @@ static bool load_from_prog_header(const char *elf_data, size_t size,
         memset(CAST_PHYSICAL_TO_VIRTUAL(paddr), 0, PAGE_SIZE);
 
         /* Map memory page */
-        if (!vmm_map(proc->page_dir, (void *)vaddr,
-                     paddr, VMM_WRITABLE | VMM_USER))
+        if ((extra_pages = vmm_map(proc->page_dir, (void *)vaddr,
+                                   paddr, VMM_WRITABLE | VMM_USER)) < 0)
         {
             pmm_free_page_address(paddr);
             return false;
         }
+
+        proc->mem_pages += extra_pages + 1;
 
         if (file_size != 0)
         {

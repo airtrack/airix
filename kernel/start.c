@@ -53,9 +53,9 @@ static void test_exec()
     struct ide_io io;
     io.drive = 0;
     io.start = 0;
-    io.sector_count = PAGE_SIZE / 512;
-    io.buffer = pmm_alloc_page_address();
-    io.size = PAGE_SIZE;
+    io.sector_count = (2 * PAGE_SIZE) / 512;
+    io.buffer = pmm_alloc_pages_address(1);
+    io.size = 2 * PAGE_SIZE;
 
     if (!ide_read_sectors(&io))
     {

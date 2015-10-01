@@ -67,6 +67,7 @@ struct process
     uint32_t kernel_stack;          /* End address of process kernel stack */
     uint32_t user_stack;            /* End address of process user stack */
     uint32_t syscall_retvalue;      /* Return value of syscall */
+    uint32_t mem_pages;             /* Memory pages used by process */
     int status;                     /* The exit status */
     struct process *parent;         /* Process's parent */
     struct process *prev;           /* Previous process in list */

@@ -15,8 +15,11 @@ typedef uint32_t physical_addr_t;
     VIRTUAL_TO_PHYSICAL((physical_addr_t)(addr))
 #define CAST_PHYSICAL_TO_VIRTUAL(addr) \
     (void *)PHYSICAL_TO_VIRTUAL((addr))
-#define CAST_P2V_OR_NULL(addr) \
-    ((addr) ? CAST_PHYSICAL_TO_VIRTUAL(addr) : NULL)
+
+static inline void * cast_p2v_or_null(physical_addr_t paddr)
+{
+    return paddr ? CAST_PHYSICAL_TO_VIRTUAL(paddr) : NULL;
+}
 
 #define ALIGN_MASK(x, mask)  \
     (((x) + (mask)) & ~(mask))

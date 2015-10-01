@@ -102,46 +102,62 @@ void proc_free(struct process *proc)
                     physical_addr_t paddr =
                         vmm_unmap_page_index(page_tab, pte, 0);
                     if (paddr != 0)
+                    {
                         pmm_free_page_address(paddr);
+                        proc->mem_pages -= 1;
+                    }
                 }
 
                 vmm_free_page_table(page_tab);
+                proc->mem_pages -= 1;
             }
         }
 
         vmm_free_vaddr_space(page_dir);
+        proc->mem_pages -= 1;
     }
 
     /* Release PID */
     if (proc->pid != -1)
         free_pid(proc->pid);
 
+    if (proc->mem_pages != 0)
+        panic("Free proc(%d) leaks %u memory pages",
+              proc->pid, proc->mem_pages);
+
     slab_free(proc_cache, proc);
 }
 
 static bool alloc_proc_stacks(struct process *proc)
 {
+    int extra_pages = 0;
     physical_addr_t stack = pmm_alloc_page_address();
     if (!stack) return false;
 
     /* Map kernel stack */
-    if (!vmm_map(proc->page_dir, (void *)(PROC_KERNEL_STACK - PAGE_SIZE),
-                 stack, VMM_WRITABLE))
+    if ((extra_pages = vmm_map(proc->page_dir,
+                               (void *)(PROC_KERNEL_STACK - PAGE_SIZE),
+                               stack, VMM_WRITABLE)) < 0)
     {
         pmm_free_page_address(stack);
         return false;
     }
+
+    proc->mem_pages += extra_pages + 1;
 
     stack = pmm_alloc_page_address();
     if (!stack) return false;
 
     /* Map user stack */
-    if (!vmm_map(proc->page_dir, (void *)(PROC_USER_STACK - PAGE_SIZE),
-                 stack, VMM_WRITABLE | VMM_USER))
+    if ((extra_pages = vmm_map(proc->page_dir,
+                               (void *)(PROC_USER_STACK - PAGE_SIZE),
+                               stack, VMM_WRITABLE | VMM_USER)) < 0)
     {
         pmm_free_page_address(stack);
         return false;
     }
+
+    proc->mem_pages += extra_pages + 1;
 
     /* Setup addresses */
     proc->kernel_stack = PROC_KERNEL_STACK;
@@ -157,6 +173,8 @@ static bool init_proc_from_elf(struct process *proc,
 
     if (!proc->page_dir)
         return false;
+
+    proc->mem_pages += 1;
 
     /* Load program into process */
     if (!elf_load_program(elf, size, proc))
@@ -199,6 +217,8 @@ static bool init_proc_from_proc(struct process *clone,
     if (!clone->page_dir)
         return false;
 
+    clone->mem_pages += 1;
+
     /* Copy user space */
     for (uint32_t pde = 0; pde < KERNEL_BASE / (NUM_PTE * PAGE_SIZE); ++pde)
     {
@@ -217,6 +237,8 @@ static bool init_proc_from_proc(struct process *clone,
              * table to the cloned page table
              */
             vmm_map_page_table_index(clone->page_dir, pde, clone_tab, tab_flag);
+            clone->mem_pages += 1;
+
             for (uint32_t pte = 0; pte < NUM_PTE; ++pte)
             {
                 uint32_t page_flag = 0;
@@ -234,6 +256,7 @@ static bool init_proc_from_proc(struct process *clone,
                            CAST_PHYSICAL_TO_VIRTUAL(page), PAGE_SIZE);
 
                     vmm_map_page_index(clone_tab, pte, clone_page, page_flag);
+                    clone->mem_pages += 1;
                 }
             }
         }
@@ -256,6 +279,10 @@ struct process * proc_clone(struct process *proc)
         proc_free(clone);
         return NULL;
     }
+
+    if (clone->mem_pages != proc->mem_pages)
+        panic("Cloned proc mem pages(%u) != proc mem pages(%u)",
+              clone->mem_pages, proc->mem_pages);
 
     clone->state = PROC_STATE_RUNNING;
     clone->context = proc->context;

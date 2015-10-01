@@ -32,7 +32,7 @@ void ktask_initialize()
     if (ktask->pid != 0)
         panic("Kernel task pid(%d) != 0", ktask->pid);
 
-    ktask->kernel_stack = (uint32_t)CAST_P2V_OR_NULL(pmm_alloc_page_address());
+    ktask->kernel_stack = (uint32_t)cast_p2v_or_null(pmm_alloc_page_address());
     if ((void *)ktask->kernel_stack == NULL)
         panic("Kernel task stack alloc fail");
 

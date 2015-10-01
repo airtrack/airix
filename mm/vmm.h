@@ -92,7 +92,13 @@ physical_addr_t vmm_unmap_page(struct page_table *page_tab,
     return vmm_unmap_page_index(page_tab, VMM_PTE_INDEX(vaddr), flag);
 }
 
-bool vmm_map(struct page_directory *page_dir, void *vaddr,
-             physical_addr_t paddr, uint32_t flag);
+/*
+ * Map physical address into virtual address in the page directory.
+ * Returns value is negative if map failure,
+ * otherwise map success, and the return value is extra used physical
+ * memory pages.
+ */
+int vmm_map(struct page_directory *page_dir, void *vaddr,
+            physical_addr_t paddr, uint32_t flag);
 
 #endif /* VMM_H */
