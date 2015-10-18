@@ -10,7 +10,8 @@ LIB_DIR = lib
 BOOTLOADER = bootloader.bin
 BOOTLOADER_ASM = $(wildcard bootloader/*.s)
 
-KERNEL_C = $(wildcard kernel/*.c) $(wildcard mm/*.c) $(filter-out lib/crt.c, $(wildcard lib/*.c))
+KERNEL_C = $(wildcard kernel/*.c) $(wildcard mm/*.c) \
+		   $(wildcard fs/*.c) $(filter-out lib/crt.c, $(wildcard lib/*.c))
 KERNEL_ASM = $(wildcard kernel/*.s) $(filter-out lib/syscall.s, $(wildcard lib/*.s))
 
 KERNEL = kernel.bin
