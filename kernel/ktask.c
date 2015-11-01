@@ -24,7 +24,7 @@ static void ktask_main()
 
 void ktask_initialize()
 {
-    /* Initialize kernel task process which is ring0 process */
+    /* Initialize kernel task process which is a ring0 process */
     struct process *ktask = proc_alloc();
     if (!ktask)
         panic("Kernel task process alloc fail");
@@ -35,6 +35,8 @@ void ktask_initialize()
     ktask->kernel_stack = (uint32_t)cast_p2v_or_null(pmm_alloc_page_address());
     if ((void *)ktask->kernel_stack == NULL)
         panic("Kernel task stack alloc fail");
+
+    ktask->kernel_stack += PAGE_SIZE;
 
     ktask->page_dir = vmm_alloc_vaddr_space();
     if (!ktask->page_dir)

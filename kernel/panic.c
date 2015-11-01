@@ -10,7 +10,6 @@ void panic(const char *fmt, ...)
     va_list ap;
 
     close_int();
-    clear_screen();
     va_start(ap, fmt);
     vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
