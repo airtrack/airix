@@ -338,7 +338,7 @@ void ide_initialize(uint16_t bm_dma)
                 if (primary) primary_exist = true;
                 else secondary_exist = true;
 
-                uint32_t bytes = d->sectors * 512;
+                uint32_t bytes = d->sectors * SECTOR_SIZE;
                 printk("  [ATA%u-%u] %u bytes, model: %s\n",
                        d->bus, d->drive, bytes, d->model);
                 ++count;
@@ -401,7 +401,7 @@ static void check_drive(const struct ide_dma_io *io_data)
         panic("[IDE] - out of sector's range, total sectors: %u, start: %u, count: %u.",
               (uint32_t)d->sectors, (uint32_t)start, sector_count);
 
-    if (io_data->size != sector_count * 512)
+    if (io_data->size != sector_count * SECTOR_SIZE)
         panic("[IDE] - io buffer size(%u) != 512 * sector_count(%u).",
               io_data->size, sector_count);
 }

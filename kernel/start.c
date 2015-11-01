@@ -4,6 +4,7 @@
 #include <kernel/pit.h>
 #include <kernel/pci.h>
 #include <kernel/ide.h>
+#include <kernel/bio.h>
 #include <kernel/exception.h>
 #include <kernel/keyboard.h>
 #include <kernel/console.h>
@@ -105,6 +106,7 @@ void kernel_entry()
     kbd_initialize();
     excep_initialize();
     pci_initialize();
+    bio_initialize();
     proc_initialize();
     sched_initialize();
     ktask_initialize();

@@ -52,6 +52,7 @@ struct trap_frame
 enum proc_state
 {
     PROC_STATE_RUNNING = 1,
+    PROC_STATE_IO,
     PROC_STATE_DEAD,
 };
 
@@ -69,6 +70,7 @@ struct process
     uint32_t syscall_retvalue;      /* Return value of syscall */
     uint32_t mem_pages;             /* Memory pages used by process */
     int status;                     /* The exit status */
+    void *sleep;                    /* Process sleep chain */
     struct process *parent;         /* Process's parent */
     struct process *prev;           /* Previous process in list */
     struct process *next;           /* Next process in list */

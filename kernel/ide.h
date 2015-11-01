@@ -3,6 +3,8 @@
 
 #include <kernel/base.h>
 
+#define SECTOR_SIZE 512
+
 void ide_initialize(uint16_t bm_dma);
 
 struct ide_dma_io;
