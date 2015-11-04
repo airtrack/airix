@@ -1,6 +1,7 @@
 #ifndef BIO_H
 #define BIO_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 struct bio;
@@ -27,7 +28,7 @@ void * bio_data(struct bio *bio);
 void bio_advance_iter(struct bio *bio);
 
 /* Read sectors from block device */
-void bio_read(struct bio *bio);
+bool bio_read(struct bio *bio);
 
 /* Write sector buffer content to block device */
 void bio_write(struct bio *bio);
