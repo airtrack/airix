@@ -7,3 +7,10 @@ size_t strlen(const char *s)
         ++p;
     return p - s;
 }
+
+char * strcpy(char *dst, const char *src)
+{
+    char *p = dst;
+    while ((*p++ = *src++));
+    return dst;
+}

@@ -11,7 +11,7 @@ struct mount;
 struct file
 {
     const struct mount *f_mount;
-    const char *f_path;
+    char *f_path;
     struct inode *f_inode;
     const struct file_operations *f_op;
 
@@ -27,7 +27,7 @@ struct file_operations
 
 struct inode
 {
-    uint8_t dev;
+    uint8_t device;
 };
 
 struct file_system
@@ -38,6 +38,7 @@ struct file_system
 
 struct mount
 {
+    uint8_t device;                     /* Mount device ID */
     const char *mount_root;             /* File system mount root path */
     const struct file_system *fs;       /* File system type */
 };

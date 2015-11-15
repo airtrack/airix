@@ -31,7 +31,7 @@ all: dir bootloader kernel libc user a_img disk
 user: libc $(USER_BIN)
 
 clean:
-	@ rm -f kernel/*.o mm/*.o lib/*.o lib/*.a user/*.o $(BIN_DIR)/* $(A_IMG) $(DISK)
+	@ rm -f kernel/*.o mm/*.o fs/*.o lib/*.o lib/*.a user/*.o $(BIN_DIR)/* $(A_IMG) $(DISK)
 
 dir:
 	@ mkdir -p $(BIN_DIR)
