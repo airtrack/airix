@@ -16,6 +16,13 @@ void * memcpy(void *restrict dst, const void *restrict src, size_t n);
 void * memset(void *b, int c, size_t len);
 
 /*
+ * Returns zero if the two strings are identical, otherwise returns the
+ * difference between the first two differing bytes.
+ * Defined in memory.s
+ */
+int memcmp(const void *s1, const void *s2, size_t n);
+
+/*
  * Returns the number of characters that precede the terminating NUL character.
  * Defined in string.c
  */
