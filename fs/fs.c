@@ -18,19 +18,20 @@ static const struct mount * find_mount(const char *path)
     return &root;
 }
 
-static char *path_dup(const char *path)
+static inline char *path_dup(const char *path)
 {
     char *dup = kmalloc(strlen(path) + 1);
     if (!dup) return NULL;
     return strcpy(dup, path);
 }
 
-static void free_path(char *path)
+static inline void free_path(char **path)
 {
-    kfree(path);
+    kfree(*path);
+    *path = NULL;
 }
 
-static struct inode * alloc_inode()
+static inline struct inode * alloc_inode()
 {
     struct inode *inode = slab_alloc(inode_cache);
     if (inode)
@@ -38,9 +39,10 @@ static struct inode * alloc_inode()
     return inode;
 }
 
-static void free_inode(struct inode *inode)
+static inline void free_inode(struct inode **inode)
 {
-    slab_free(inode_cache, inode);
+    slab_free(inode_cache, *inode);
+    *inode = NULL;
 }
 
 void vfs_initialize()
@@ -51,6 +53,9 @@ void vfs_initialize()
 
     file_cache = slab_create_kmem_cache(sizeof(struct file), sizeof(void *));
     inode_cache = slab_create_kmem_cache(sizeof(struct inode), sizeof(void *));
+
+    /* Initialize file systems */
+    axfs.initialize();
 }
 
 struct file * vfs_alloc_file()
@@ -68,6 +73,8 @@ void vfs_free_file(struct file *file)
 
 int vfs_open(struct file *file, const char *path, int flags)
 {
+    int error;
+
     file->f_mount = find_mount(path);
     if (!file->f_mount)
         panic("Can not find file '%s' mount path.", path);
@@ -80,9 +87,16 @@ int vfs_open(struct file *file, const char *path, int flags)
     if (!file->f_path || !file->f_inode)
         panic("Alloc file struct data failed.");
 
-    file->f_inode->device = file->f_mount->device;
+    file->f_inode->i_device = file->f_mount->device;
 
-    return file->f_op->open(file);
+    error = file->f_op->open(file);
+    if (error != 0)
+    {
+        free_path(&file->f_path);
+        free_inode(&file->f_inode);
+    }
+
+    return error;
 }
 
 int vfs_read(struct file *file, char *buffer, size_t bytes)
@@ -97,7 +111,8 @@ int vfs_write(struct file *file, const char *data, size_t bytes)
 
 int vfs_close(struct file *file)
 {
-    free_path(file->f_path);
-    free_inode(file->f_inode);
+    file->f_op->close(file);
+    free_path(&file->f_path);
+    free_inode(&file->f_inode);
     return 0;
 }

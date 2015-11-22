@@ -220,7 +220,7 @@ uint64_t bio_last_sector(struct bio *bio)
     return bio->sector + SECTORS_PER_BIO - 1;
 }
 
-void * bio_data(struct bio *bio)
+char * bio_data(struct bio *bio)
 {
     if (bio->iter < SECTORS_PER_BIO)
     {

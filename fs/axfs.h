@@ -1,9 +1,14 @@
 #ifndef AXFS_H
 #define AXFS_H
 
+#include <kernel/ide.h>
 #include <stdint.h>
 
+#define AX_FS_ROOT_INO 1
+#define AX_FS_SUPER_BLOCK_NO 1
 #define AX_FS_BLOCK_SIZE 1024
+#define AX_FS_BLOCKS_PER_GROUP (8 * AX_FS_BLOCK_SIZE)
+#define AX_FS_SECTORS_PER_BLOCK (AX_FS_BLOCK_SIZE / SECTOR_SIZE)
 
 struct ax_super_block
 {
@@ -11,6 +16,7 @@ struct ax_super_block
     uint32_t s_blocks_count;
     uint32_t s_free_inodes_count;
     uint32_t s_free_blocks_count;
+    uint32_t s_inodes_per_group;
 };
 
 struct ax_block_group_descriptor

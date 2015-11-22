@@ -4,6 +4,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
+enum open_flags
+{
+    O_RDONLY    = 1,
+    O_WRONLY    = 1 << 1,
+    O_RDWR      = 1 << 2,
+    O_CREAT     = 1 << 3,
+    O_TRUNC     = 1 << 4,
+};
+
 struct inode;
 struct file_operations;
 struct mount;
@@ -11,9 +20,10 @@ struct mount;
 struct file
 {
     const struct mount *f_mount;
+    const struct file_operations *f_op;
+
     char *f_path;
     struct inode *f_inode;
-    const struct file_operations *f_op;
 
     int f_flags;
 };
@@ -21,19 +31,23 @@ struct file
 struct file_operations
 {
     int (*open)(struct file *);
+    int (*close)(struct file *);
     int (*read)(struct file *, char *, size_t);
     int (*write)(struct file *, const char *, size_t);
 };
 
 struct inode
 {
-    uint8_t device;
+    uint8_t i_device;
+    uint32_t i_ino;
+    void *i_private;
 };
 
 struct file_system
 {
     const char *name;                   /* File system name */
     const struct file_operations *op;   /* File operations of file system */
+    void (*initialize)();               /* File system initialize function */
 };
 
 struct mount

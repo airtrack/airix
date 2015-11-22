@@ -19,7 +19,7 @@ uint64_t bio_last_sector(struct bio *bio);
  * Returns current sector buffer if the iterator pointer a valid sector,
  * otherwise, returns NULL.
  */
-void * bio_data(struct bio *bio);
+char * bio_data(struct bio *bio);
 
 /*
  * Advance the iterator of the bio, then call bio_data to get next sector
