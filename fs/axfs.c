@@ -96,12 +96,101 @@ static inline void inode_release(struct ax_inode *inode)
         slab_free(inode_cache, inode);
 }
 
-static uint32_t namex(const struct ax_super_block *sb,
-                      const struct ax_inode *dir,
-                      const char *name, uint8_t device)
+static inline const char * str_find(const char *str, int c)
 {
-    (void)sb, (void)dir,(void)name, (void)device;
+    while (*str != '\0' && (unsigned char)*str != c)
+        ++str;
+    return str;
+}
+
+static uint32_t block_find_ino(const char *name, size_t length,
+                               uint8_t device, uint32_t block)
+{
+    struct bio *bio = bio_get(device, SECTOR_NO(block));
+    if (!bio)
+        return 0;
+
+    if (bio_read(bio))
+    {
+        char *it = bio_data(bio);
+        char *end = it + AX_FS_BLOCK_SIZE;
+        struct ax_directory_entry *entry = NULL;
+
+        for (; it < end; it += entry->rec_len)
+        {
+            entry = (struct ax_directory_entry *)(it);
+            if (entry->name_len == length &&
+                memcmp(name, entry->name, length) == 0)
+            {
+                return entry->inode;
+            }
+        }
+    }
+
+    bio_release(bio);
     return 0;
+}
+
+static uint32_t dir_find_ino(const struct ax_inode *dir,
+                             const char *name, size_t length,
+                             uint8_t device)
+{
+    uint32_t ino = 0;
+
+    for (int i = 0; i < AX_FS_DIRECT_BLOCK_COUNT; ++i)
+    {
+        if (dir->i_block[i] == 0)
+            break;
+
+        ino = block_find_ino(name, length, device, dir->i_block[i]);
+        if (ino != 0)
+            break;
+    }
+
+    /* TODO: Find in indirect blocks */
+
+    return ino;
+}
+
+static uint32_t namex(const struct ax_super_block *sb,
+                      const char *name, uint8_t device,
+                      uint32_t ino)
+{
+    const char *begin = name;
+    const char *end = str_find(begin, '/');
+    struct ax_inode *inode = NULL;
+
+    while (end - begin != 0)
+    {
+        inode = inode_get(sb, device, ino);
+
+        if (!inode || inode->i_mode != AX_S_IFDIR)
+        {
+            ino = 0;
+            break;
+        }
+
+        ino = dir_find_ino(inode, begin, end - begin, device);
+
+        if (ino == 0)
+            break;
+
+        inode_release(inode);
+        inode = NULL;
+
+        if (*end == '\0')
+        {
+            begin = end;
+        }
+        else
+        {
+            begin = end + 1;
+            end = str_find(begin, '/');
+        }
+    }
+
+    inode_release(inode);
+    return ino;
 }
 
 static struct ax_inode * namei(const struct ax_super_block *sb,
@@ -109,15 +198,14 @@ static struct ax_inode * namei(const struct ax_super_block *sb,
                                uint32_t *ino)
 {
     struct ax_inode *inode = NULL;
-    struct ax_inode *root = inode_get(sb, device, AX_FS_ROOT_INO);
-    if (!root || root->i_mode != AX_S_IFDIR)
-        panic("File system axfs: root inode does not exist.");
 
-    *ino = namex(sb, root, name + 1, device);
-    if (*ino != 0)
-        inode = inode_get(sb, device, *ino);
+    if (*name == '/')
+    {
+        *ino = namex(sb, name + 1, device, AX_FS_ROOT_INO);
+        if (*ino != 0)
+            inode = inode_get(sb, device, *ino);
+    }
 
-    inode_release(root);
     return inode;
 }
 
@@ -126,6 +214,9 @@ static int ax_open(struct file *file)
     struct ax_super_block sb;
     struct ax_inode *inode;
     uint32_t ino;
+
+    if (file->f_flags != O_RDONLY)
+        return -1;
 
     get_super_block(&sb, file->f_inode->i_device);
     inode = namei(&sb, file->f_path, file->f_inode->i_device, &ino);
