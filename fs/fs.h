@@ -25,6 +25,8 @@ struct file
     char *f_path;
     struct inode *f_inode;
 
+    uint64_t f_pos;
+    int f_refs;
     int f_flags;
 };
 

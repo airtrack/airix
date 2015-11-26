@@ -103,14 +103,34 @@ static inline const char * str_find(const char *str, int c)
     return str;
 }
 
+static inline struct bio * block_read(uint8_t device, uint32_t block)
+{
+    struct bio *bio = bio_get(device, SECTOR_NO(block));
+
+    if (bio)
+    {
+        if (!bio_read(bio))
+        {
+            bio_release(bio);
+            bio = NULL;
+        }
+    }
+
+    return bio;
+}
+
+static inline void block_release(struct bio *bio)
+{
+    bio_release(bio);
+}
+
 static uint32_t block_find_ino(const char *name, size_t length,
                                uint8_t device, uint32_t block)
 {
-    struct bio *bio = bio_get(device, SECTOR_NO(block));
-    if (!bio)
-        return 0;
+    uint32_t ino = 0;
+    struct bio *bio = block_read(device, SECTOR_NO(block));
 
-    if (bio_read(bio))
+    if (bio)
     {
         char *it = bio_data(bio);
         char *end = it + AX_FS_BLOCK_SIZE;
@@ -122,13 +142,15 @@ static uint32_t block_find_ino(const char *name, size_t length,
             if (entry->name_len == length &&
                 memcmp(name, entry->name, length) == 0)
             {
-                return entry->inode;
+                ino = entry->inode;
+                break;
             }
         }
+
+        block_release(bio);
     }
 
-    bio_release(bio);
-    return 0;
+    return ino;
 }
 
 static uint32_t dir_find_ino(const struct ax_inode *dir,
@@ -209,6 +231,46 @@ static struct ax_inode * namei(const struct ax_super_block *sb,
     return inode;
 }
 
+static int read_file(struct inode *inode, uint64_t pos,
+                     char *buffer, size_t size)
+{
+    struct ax_inode *ax_inode = inode->i_private;
+    uint32_t block_index = pos / AX_FS_BLOCK_SIZE;
+    uint32_t block_pos = pos % AX_FS_BLOCK_SIZE;
+    char *begin = buffer;
+
+    /* EOF */
+    if (pos >= ax_inode->i_size)
+        return 0;
+
+    if (block_index >= AX_FS_DIRECT_BLOCK_COUNT)
+        return -1;
+
+    size = KMIN(size, ax_inode->i_size - pos);
+    while (size > 0 && block_index < AX_FS_DIRECT_BLOCK_COUNT)
+    {
+        uint32_t bytes = 0;
+        struct bio *block = block_read(inode->i_device,
+                                       ax_inode->i_block[block_index]);
+        if (!block)
+            return -1;
+
+        bytes = KMIN(size, AX_FS_BLOCK_SIZE - block_pos);
+        memcpy(buffer, bio_data(block) + block_pos, bytes);
+        block_release(block);
+
+        size -= bytes;
+        buffer += bytes;
+
+        block_index += 1;
+        block_pos = 0;
+    }
+
+    /* TODO: read from indirect blocks */
+
+    return buffer - begin;
+}
+
 static int ax_open(struct file *file)
 {
     struct ax_super_block sb;
@@ -240,8 +302,17 @@ static int ax_close(struct file *file)
 
 static int ax_read(struct file *file, char *buffer, size_t size)
 {
-    (void)file, (void)buffer, (void)size;
-    return 0;
+    int read = 0;
+
+    if (file->f_flags != O_RDONLY || file->f_flags != O_RDWR)
+        return -1;
+
+    read = read_file(file->f_inode, file->f_pos, buffer, size);
+
+    if (read > 0)
+        file->f_pos += (uint64_t)read;
+
+    return read;
 }
 
 static int ax_write(struct file *file, const char *buffer, size_t size)
