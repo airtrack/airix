@@ -5,8 +5,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+struct file;
 typedef short pid_t;
 
+#define PROC_MAX_FILE_NUM 16
 #define PROC_MAX_NUM 1024
 #define FLAGS_IF (1 << 9)
 
@@ -74,6 +76,8 @@ struct process
     struct process *parent;         /* Process's parent */
     struct process *prev;           /* Previous process in list */
     struct process *next;           /* Next process in list */
+
+    struct file *files[PROC_MAX_FILE_NUM];  /* Array of files */
 };
 
 void proc_initialize();

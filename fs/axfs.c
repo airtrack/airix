@@ -318,7 +318,7 @@ static int ax_read(struct file *file, char *buffer, size_t size)
 static int ax_write(struct file *file, const char *buffer, size_t size)
 {
     (void)file, (void)buffer, (void)size;
-    return 0;
+    return -1;
 }
 
 static const struct file_operations ops =
