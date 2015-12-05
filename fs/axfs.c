@@ -2,10 +2,12 @@
 #include <fs/fs.h>
 #include <mm/slab.h>
 #include <kernel/bio.h>
+#include <kernel/ide.h>
 #include <kernel/klib.h>
 #include <stdbool.h>
 #include <string.h>
 
+#define AX_FS_SECTORS_PER_BLOCK (AX_FS_BLOCK_SIZE / SECTOR_SIZE)
 #define SECTOR_NO(block) ((block) * AX_FS_SECTORS_PER_BLOCK)
 
 static struct kmem_cache *inode_cache;

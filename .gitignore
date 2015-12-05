@@ -1,5 +1,7 @@
 a.img
+axfs.img
 disk
+mkfs
 bochsout.txt
 .DS_Store
 .ycm_extra_conf.py

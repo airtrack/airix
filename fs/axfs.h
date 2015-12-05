@@ -1,7 +1,6 @@
 #ifndef AXFS_H
 #define AXFS_H
 
-#include <kernel/ide.h>
 #include <stdint.h>
 
 #define AX_FS_ROOT_INO 1
@@ -9,7 +8,6 @@
 #define AX_FS_DIRECT_BLOCK_COUNT 21
 #define AX_FS_BLOCK_SIZE 1024
 #define AX_FS_BLOCKS_PER_GROUP (8 * AX_FS_BLOCK_SIZE)
-#define AX_FS_SECTORS_PER_BLOCK (AX_FS_BLOCK_SIZE / SECTOR_SIZE)
 
 struct ax_super_block
 {
@@ -39,13 +37,13 @@ struct ax_inode
 {
     uint16_t i_mode;
     uint16_t i_uid;
-    uint64_t i_size;
     uint32_t i_atime;
     uint32_t i_ctime;
     uint32_t i_mtime;
     uint32_t i_dtime;
     uint16_t i_gid;
     uint16_t i_links_count;
+    uint64_t i_size;
     uint32_t i_block[24];
 };
 

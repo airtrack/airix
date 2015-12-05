@@ -26,12 +26,12 @@ INCLUDE = -I. -Ilib
 CFLAGS = -std=c99 -m32 -Wall -Wextra -nostdinc -fno-builtin -fno-stack-protector $(INCLUDE)
 LFLAGS = -nostdlib -Llib -lc
 
-all: dir bootloader kernel libc user a_img disk
+all: dir bootloader kernel libc user mkfs a_img disk
 
 user: libc $(USER_BIN)
 
 clean:
-	@ rm -f kernel/*.o mm/*.o fs/*.o lib/*.o lib/*.a user/*.o $(BIN_DIR)/* $(A_IMG) $(DISK)
+	@ rm -f kernel/*.o mm/*.o fs/*.o lib/*.o lib/*.a user/*.o mkfs $(BIN_DIR)/* $(A_IMG) $(DISK)
 
 dir:
 	@ mkdir -p $(BIN_DIR)
@@ -47,6 +47,10 @@ kernel: $(KERNEL_OBJS)
 libc: $(LIBC_OBJS)
 	@ echo "ar $(LIB_DIR)/$(LIBC) ..."
 	@ ar -r $(LIB_DIR)/$(LIBC) $(LIBC_OBJS) > /dev/null 2>&1
+
+mkfs: tools/mkfs.c
+	@ echo "compiling $< ..."
+	@ gcc -std=c99 -Wall -Wextra -I. $< -o $@
 
 bin/%: user/%.o
 	@ echo "linking $@ ..."
