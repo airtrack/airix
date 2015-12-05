@@ -1,4 +1,4 @@
-.PHONY: all clean dir bootloader kernel libc user a_img
+.PHONY: all clean dir bootloader kernel libc usr a_img
 
 .PRECIOUS: %.o
 
@@ -20,18 +20,18 @@ KERNEL_OBJS = $(subst .c,.o,$(KERNEL_C)) $(subst .s,.o,$(KERNEL_ASM))
 LIBC = libc.a
 LIBC_OBJS = $(subst .c,.o,$(wildcard lib/*.c)) $(subst .s,.o,$(wildcard lib/*.s))
 
-USER_BIN = $(subst user,bin,$(subst .c,,$(wildcard user/*.c)))
+USR_BIN = $(subst usr,bin,$(subst .c,,$(wildcard usr/*.c)))
 
 INCLUDE = -I. -Ilib
 CFLAGS = -std=c99 -m32 -Wall -Wextra -nostdinc -fno-builtin -fno-stack-protector $(INCLUDE)
 LFLAGS = -nostdlib -Llib -lc
 
-all: dir bootloader kernel libc user mkfs a_img disk
+all: dir bootloader kernel libc usr mkfs a_img disk
 
-user: libc $(USER_BIN)
+usr: libc $(USR_BIN)
 
 clean:
-	@ rm -f kernel/*.o mm/*.o fs/*.o lib/*.o lib/*.a user/*.o mkfs $(BIN_DIR)/* $(A_IMG) $(DISK)
+	@ rm -f kernel/*.o mm/*.o fs/*.o lib/*.o lib/*.a usr/*.o mkfs $(BIN_DIR)/* $(A_IMG) $(DISK)
 
 dir:
 	@ mkdir -p $(BIN_DIR)
@@ -52,7 +52,7 @@ mkfs: tools/mkfs.c
 	@ echo "compiling $< ..."
 	@ gcc -std=c99 -Wall -Wextra -I. $< -o $@
 
-bin/%: user/%.o
+bin/%: usr/%.o
 	@ echo "linking $@ ..."
 	@ gcc $(CFLAGS) $< $(LFLAGS) -o $@
 
