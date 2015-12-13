@@ -10,3 +10,4 @@ log: bochsout.txt
 mouse: enabled=0
 
 ata0-master: type=disk, mode=flat, path="disk", model="HDD disk"
+ata0-slave: type=disk, mode=flat, path="axfs.img", model="HDD disk"

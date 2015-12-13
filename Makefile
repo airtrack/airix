@@ -70,7 +70,9 @@ a_img: bootloader kernel
 	@ dd if=$(BIN_DIR)/$(BOOTLOADER) of=$(A_IMG) conv=notrunc bs=512 count=1 > /dev/null 2>&1
 	@ dd if=$(BIN_DIR)/$(KERNEL) of=$(A_IMG) seek=512 conv=notrunc bs=1 > /dev/null 2>&1
 
-disk:
+disk: mkfs
 	@ echo "making $(DISK) ..."
 	@ dd if=/dev/zero of=$(DISK) bs=512 count=20160 > /dev/null 2>&1
 	@ dd if=$(BIN_DIR)/init of=$(DISK) conv=notrunc bs=1 > /dev/null 2>&1
+	@ echo "making axfs.img ..."
+	@ ./mkfs -s 10 > /dev/null
