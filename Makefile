@@ -75,4 +75,4 @@ disk: mkfs
 	@ dd if=/dev/zero of=$(DISK) bs=512 count=20160 > /dev/null 2>&1
 	@ dd if=$(BIN_DIR)/init of=$(DISK) conv=notrunc bs=1 > /dev/null 2>&1
 	@ echo "making axfs.img ..."
-	@ ./mkfs -s 10 > /dev/null
+	@ ./mkfs -s 10 -c ./README.md:/test > /dev/null

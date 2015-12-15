@@ -14,6 +14,7 @@
 #include <kernel/klib.h>
 #include <mm/pmm.h>
 #include <mm/paging.h>
+#include <fs/fs.h>
 #include <string.h>
 
 struct boot_info
@@ -107,6 +108,7 @@ void kernel_entry()
     excep_initialize();
     pci_initialize();
     bio_initialize();
+    vfs_initialize();
     proc_initialize();
     sched_initialize();
     ktask_initialize();

@@ -52,7 +52,7 @@ static inline uint32_t get_bg_inode_table(uint8_t device, uint32_t bg_index)
 
     uint32_t offset = sizeof(struct ax_block_group_descriptor) * bg_index;
     uint32_t sector = (offset % AX_FS_BLOCK_SIZE) / SECTOR_SIZE;
-    uint64_t block = offset / AX_FS_BLOCK_SIZE + AX_FS_SUPER_BLOCK_NO;
+    uint64_t block = offset / AX_FS_BLOCK_SIZE + AX_FS_SUPER_BLOCK_NO + 1;
 
     struct bio *bio = bio_get(device, SECTOR_NO(block) + sector);
     struct ax_block_group_descriptor *desc = NULL;
@@ -130,7 +130,7 @@ static uint32_t block_find_ino(const char *name, size_t length,
                                uint8_t device, uint32_t block)
 {
     uint32_t ino = 0;
-    struct bio *bio = block_read(device, SECTOR_NO(block));
+    struct bio *bio = block_read(device, block);
 
     if (bio)
     {
@@ -147,6 +147,9 @@ static uint32_t block_find_ino(const char *name, size_t length,
                 ino = entry->inode;
                 break;
             }
+
+            if (entry->rec_len == 0)
+                break;
         }
 
         block_release(bio);
@@ -306,7 +309,7 @@ static int ax_read(struct file *file, char *buffer, size_t size)
 {
     int read = 0;
 
-    if (file->f_flags != O_RDONLY || file->f_flags != O_RDWR)
+    if (!(file->f_flags == O_RDONLY || file->f_flags == O_RDWR))
         return -1;
 
     read = read_file(file->f_inode, file->f_pos, buffer, size);

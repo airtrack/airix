@@ -9,7 +9,8 @@
 
 #define MAX_CACHE_COUNT 4096
 #define SECTORS_PER_BIO (PAGE_SIZE / SECTOR_SIZE)
-#define BASE_SECTOR(sector) ((sector) / SECTORS_PER_BIO)
+#define BASE_SECTOR(sector) \
+    (((sector) / SECTORS_PER_BIO) * SECTORS_PER_BIO)
 
 enum bio_flag
 {
@@ -100,7 +101,7 @@ static struct bio * slab_alloc_bio()
     if (bio)
     {
         memset(bio, 0, sizeof(*bio));
-        bio->buffer = cast_p2v_or_null(pmm_alloc_page());
+        bio->buffer = cast_p2v_or_null(pmm_alloc_page_address());
 
         if (bio->buffer)
         {
@@ -229,6 +230,8 @@ char * bio_data(struct bio *bio)
         return buffer;
     }
 
+    panic("bio data error, sector: %u, iter: %u",
+          (uint32_t)bio->sector, bio->iter);
     return NULL;
 }
 
@@ -238,7 +241,7 @@ void bio_advance_iter(struct bio *bio)
         bio->iter++;
 }
 
-static void ide_read_complete(struct ide_dma_io *io, bool succeed)
+static void ide_read_complete(struct ide_dma_io *io, bool error)
 {
     struct bio *bio = io->data;
     struct process *proc = bio->sleep;
@@ -246,7 +249,7 @@ static void ide_read_complete(struct ide_dma_io *io, bool succeed)
     /* Close interrupt as lock */
     close_int();
 
-    if (succeed)
+    if (!error)
         bio->flag |= BIO_FLAG_UPDATED;
 
     /* Wake up the reader process */
@@ -278,14 +281,14 @@ bool bio_read(struct bio *bio)
     return (bio->flag & BIO_FLAG_UPDATED) != 0;
 }
 
-static void ide_write_complete(struct ide_dma_io *io, bool succeed)
+static void ide_write_complete(struct ide_dma_io *io, bool error)
 {
     struct bio *bio = io->data;
 
     /* Close interrupt as lock */
     close_int();
 
-    if (succeed)
+    if (!error)
         bio->flag |= BIO_FLAG_UPDATED;
     bio->flag &= ~BIO_FLAG_DIRTY;
 
