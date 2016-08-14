@@ -270,6 +270,54 @@ bool get_dir_entry_from_block(FILE *img, uint32_t block, const char *name,
     return false;
 }
 
+bool get_dir_entry_from_indirect_block(FILE *img, uint32_t block,
+                                       const char *name,
+                                       struct ax_directory_entry *entry,
+                                       bool (*entry_getter)(
+                                           FILE *, uint32_t, const char *,
+                                           struct ax_directory_entry *))
+{
+    uint32_t data[AX_FS_BLOCK_SIZE / sizeof(uint32_t)];
+
+    fseek(img, block * AX_FS_BLOCK_SIZE, SEEK_SET);
+    fread(data, 1, sizeof(data), img);
+
+    for (uint32_t i = 0; i < AX_FS_BLOCK_SIZE / sizeof(uint32_t); ++i)
+    {
+        if (data[i] == 0)
+            break;
+
+        if (entry_getter(img, data[i], name, entry))
+            return true;
+    }
+
+    return false;
+}
+
+bool get_dir_entry_from_1_indirect_block(FILE *img, uint32_t block,
+                                         const char *name,
+                                         struct ax_directory_entry *entry)
+{
+    return get_dir_entry_from_indirect_block(
+        img, block, name, entry, get_dir_entry_from_block);
+}
+
+bool get_dir_entry_from_2_indirect_block(FILE *img, uint32_t block,
+                                         const char *name,
+                                         struct ax_directory_entry *entry)
+{
+    return get_dir_entry_from_indirect_block(
+        img, block, name, entry, get_dir_entry_from_1_indirect_block);
+}
+
+bool get_dir_entry_from_3_indirect_block(FILE *img, uint32_t block,
+                                         const char *name,
+                                         struct ax_directory_entry *entry)
+{
+    return get_dir_entry_from_indirect_block(
+        img, block, name, entry, get_dir_entry_from_2_indirect_block);
+}
+
 uint32_t alloc_block_from_block_group(FILE *img, uint32_t bg_no)
 {
     struct ax_block_group_descriptor desc;
@@ -317,6 +365,18 @@ uint32_t alloc_block(FILE *img)
     fprintf(stderr, "Alloc block failed.\n");
     exit(1);
     return 0;
+}
+
+void read_block_data(FILE *img, uint32_t block, void *data, size_t len)
+{
+    fseek(img, block * AX_FS_BLOCK_SIZE, SEEK_SET);
+    fread(data, 1, len, img);
+}
+
+void update_block_data(FILE *img, uint32_t block, const void *data, size_t len)
+{
+    fseek(img, block * AX_FS_BLOCK_SIZE, SEEK_SET);
+    fwrite(data, 1, len, img);
 }
 
 void update_block_bitmap(FILE *img, uint32_t block)
@@ -590,7 +650,9 @@ void get_super_block(FILE *img)
 bool get_entry_from_dir(FILE *img, uint32_t ino, const char *name,
                         struct ax_directory_entry *entry)
 {
+    uint32_t indirect;
     struct ax_inode inode;
+
     get_inode(img, ino, &inode);
 
     if (inode.i_mode != AX_S_IFDIR)
@@ -599,22 +661,171 @@ bool get_entry_from_dir(FILE *img, uint32_t ino, const char *name,
     for (int i = 0; i < AX_FS_DIRECT_BLOCK_COUNT; ++i)
     {
         if (inode.i_block[i] == 0)
-            break;
+            return false;
 
         if (get_dir_entry_from_block(img, inode.i_block[i], name, entry))
             return true;
     }
 
-    /* TODO: get entry from indirect blocks */
+    indirect = AX_FS_1_INDIRECT_BLOCK_INDEX;
+    if (inode.i_block[indirect] != 0)
+    {
+        if (get_dir_entry_from_1_indirect_block(img, inode.i_block[indirect],
+                                                name, entry))
+            return true;
+    }
+
+    indirect = AX_FS_2_INDIRECT_BLOCK_INDEX;
+    if (inode.i_block[indirect] != 0)
+    {
+        if (get_dir_entry_from_2_indirect_block(img, inode.i_block[indirect],
+                                                name, entry))
+            return true;
+    }
+
+    indirect = AX_FS_3_INDIRECT_BLOCK_INDEX;
+    if (inode.i_block[indirect] != 0)
+    {
+        if (get_dir_entry_from_3_indirect_block(img, inode.i_block[indirect],
+                                                name, entry))
+            return true;
+    }
 
     return false;
+}
+
+bool write_entry_to_blocks(FILE *img, uint32_t ino, struct ax_inode *inode,
+                           const char *name, uint8_t ft, uint32_t entry_ino,
+                           uint32_t *blocks, int blocks_num,
+                           uint32_t blocks_block)
+{
+    for (int i = 0; i < blocks_num; ++i)
+    {
+        if (blocks[i] == 0)
+        {
+            blocks[i] = alloc_block(img);
+            init_dir_block(img, blocks[i]);
+            if (blocks_block == 0)
+                update_inode(img, ino, inode);
+            else
+                update_block_data(img, blocks_block, blocks,
+                                  sizeof(*blocks) * blocks_num);
+            update_block_bitmap(img, blocks[i]);
+
+            super_block.s_free_blocks_count -= 1;
+            update_super_block(img);
+        }
+
+        if (write_dir_entry_to_block(img, blocks[i], name, ft, entry_ino))
+        {
+            struct ax_inode entry_inode;
+            memset(&entry_inode, 0, sizeof(entry_inode));
+            entry_inode.i_mode = ft == AX_FT_DIR ? AX_S_IFDIR : AX_S_IFREG;
+            write_inode(img, entry_ino, &entry_inode);
+
+            super_block.s_free_inodes_count -= 1;
+            update_super_block(img);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool write_entry_to_indirect_blocks(FILE *img, uint32_t ino,
+                                    struct ax_inode *inode,
+                                    const char *name, uint8_t ft,
+                                    uint32_t entry_ino,
+                                    uint32_t *indirect_blocks,
+                                    int indirect_blocks_num,
+                                    uint32_t indirect_blocks_block,
+                                    bool (*entry_writter)(
+                                        FILE *, uint32_t,
+                                        struct ax_inode *,
+                                        const char *, uint8_t,
+                                        uint32_t, uint32_t *,
+                                        int, uint32_t))
+{
+    uint32_t blocks[AX_FS_BLOCK_SIZE / sizeof(uint32_t)];
+
+    for (int i = 0; i < indirect_blocks_num; ++i)
+    {
+        if (indirect_blocks[i] == 0)
+        {
+            indirect_blocks[i] = alloc_block(img);
+            if (indirect_blocks_block == 0)
+                update_inode(img, ino, inode);
+            else
+                update_block_data(img, indirect_blocks_block,
+                                  indirect_blocks,
+                                  indirect_blocks_num *
+                                  sizeof(*indirect_blocks));
+            update_block_bitmap(img, indirect_blocks[i]);
+
+            super_block.s_free_blocks_count -= 1;
+            update_super_block(img);
+        }
+
+        read_block_data(img, indirect_blocks[i], blocks, sizeof(blocks));
+        if (entry_writter(img, ino, inode, name, ft, entry_ino,
+                          blocks, sizeof(blocks) / sizeof(blocks[0]),
+                          indirect_blocks[i]))
+            return true;
+    }
+
+    return false;
+}
+
+bool write_entry_to_1_indirect_blocks(FILE *img, uint32_t ino,
+                                      struct ax_inode *inode,
+                                      const char *name, uint8_t ft,
+                                      uint32_t entry_ino,
+                                      uint32_t *indirect_blocks,
+                                      int indirect_blocks_num,
+                                      uint32_t indirect_blocks_block)
+{
+    return write_entry_to_indirect_blocks(img, ino, inode, name, ft,
+                                          entry_ino, indirect_blocks,
+                                          indirect_blocks_num,
+                                          indirect_blocks_block,
+                                          write_entry_to_blocks);
+}
+
+bool write_entry_to_2_indirect_blocks(FILE *img, uint32_t ino,
+                                      struct ax_inode *inode,
+                                      const char *name, uint8_t ft,
+                                      uint32_t entry_ino,
+                                      uint32_t *indirect_blocks,
+                                      int indirect_blocks_num,
+                                      uint32_t indirect_blocks_block)
+{
+    return write_entry_to_indirect_blocks(img, ino, inode, name, ft,
+                                          entry_ino, indirect_blocks,
+                                          indirect_blocks_num,
+                                          indirect_blocks_block,
+                                          write_entry_to_1_indirect_blocks);
+}
+
+bool write_entry_to_3_indirect_blocks(FILE *img, uint32_t ino,
+                                      struct ax_inode *inode,
+                                      const char *name, uint8_t ft,
+                                      uint32_t entry_ino,
+                                      uint32_t *indirect_blocks,
+                                      int indirect_blocks_num,
+                                      uint32_t indirect_blocks_block)
+{
+    return write_entry_to_indirect_blocks(img, ino, inode, name, ft,
+                                          entry_ino, indirect_blocks,
+                                          indirect_blocks_num,
+                                          indirect_blocks_block,
+                                          write_entry_to_2_indirect_blocks);
 }
 
 uint32_t write_entry_to_dir(FILE *img, uint32_t ino, const char *name,
                             uint8_t ft)
 {
+    uint32_t index;
     uint32_t entry_ino;
-    struct ax_inode entry_inode;
     struct ax_inode inode;
 
     get_inode(img, ino, &inode);
@@ -624,32 +835,27 @@ uint32_t write_entry_to_dir(FILE *img, uint32_t ino, const char *name,
 
     entry_ino = alloc_inode_no(img);
 
-    /* TODO: write to indirect blocks */
-    for (int i = 0; i < AX_FS_DIRECT_BLOCK_COUNT; ++i)
-    {
-        if (inode.i_block[i] == 0)
-        {
-            inode.i_block[i] = alloc_block(img);
-            init_dir_block(img, inode.i_block[i]);
-            update_inode(img, ino, &inode);
-            update_block_bitmap(img, inode.i_block[i]);
+    if (write_entry_to_blocks(img, ino, &inode, name, ft, entry_ino,
+                              inode.i_block, AX_FS_DIRECT_BLOCK_COUNT, 0))
+        return entry_ino;
 
-            super_block.s_free_blocks_count -= 1;
-            update_super_block(img);
-        }
+    /* Write into 1-level indirect blocks */
+    index = AX_FS_1_INDIRECT_BLOCK_INDEX;
+    if (write_entry_to_1_indirect_blocks(img, ino, &inode, name, ft, entry_ino,
+                                         &inode.i_block[index], 1, 0))
+        return entry_ino;
 
-        if (write_dir_entry_to_block(img, inode.i_block[i],
-                                     name, ft, entry_ino))
-        {
-            memset(&entry_inode, 0, sizeof(entry_inode));
-            entry_inode.i_mode = ft == AX_FT_DIR ? AX_S_IFDIR : AX_S_IFREG;
-            write_inode(img, entry_ino, &entry_inode);
+    /* Write into 2-level indirect blocks */
+    index = AX_FS_2_INDIRECT_BLOCK_INDEX;
+    if (write_entry_to_2_indirect_blocks(img, ino, &inode, name, ft, entry_ino,
+                                         &inode.i_block[index], 1, 0))
+        return entry_ino;
 
-            super_block.s_free_inodes_count -= 1;
-            update_super_block(img);
-            return entry_ino;
-        }
-    }
+    /* Write into 3-level indirect blocks */
+    index = AX_FS_3_INDIRECT_BLOCK_INDEX;
+    if (write_entry_to_3_indirect_blocks(img, ino, &inode, name, ft, entry_ino,
+                                         &inode.i_block[index], 1, 0))
+        return entry_ino;
 
     return 0;
 }
@@ -698,12 +904,166 @@ uint32_t create_file_inode(FILE *img, char *dst, struct ax_inode *inode)
     return ino;
 }
 
+void alloc_indirect_block(FILE *img, uint32_t *indirect,
+                          uint32_t indirect_index)
+{
+    uint32_t blocks[AX_FS_BLOCK_SIZE / sizeof(uint32_t)] = { 0 };
+
+    indirect[indirect_index] = alloc_block(img);
+    update_block_data(img, indirect[indirect_index],
+                      blocks, sizeof(blocks));
+    update_block_bitmap(img, indirect[indirect_index]);
+
+    super_block.s_free_blocks_count -= 1;
+}
+
+void write_data_into_blocks(FILE *img, FILE *sfile, uint32_t *blocks,
+                            uint32_t blocks_len, size_t *size)
+{
+    uint32_t block_index = 0;
+
+    while (block_index < blocks_len && *size > 0)
+    {
+        uint8_t data[AX_FS_BLOCK_SIZE];
+        size_t block_size = *size > AX_FS_BLOCK_SIZE ? AX_FS_BLOCK_SIZE : *size;
+
+        fread(data, 1, block_size, sfile);
+
+        blocks[block_index] = alloc_block(img);
+        update_block_data(img, blocks[block_index], data, block_size);
+        update_block_bitmap(img, blocks[block_index]);
+
+        super_block.s_free_blocks_count -= 1;
+        *size -= block_size;
+        block_index += 1;
+    }
+}
+
+void write_data_into_1_indirect_blocks(FILE *img, FILE *sfile,
+                                       uint32_t *indirect,
+                                       uint32_t indirect_index,
+                                       size_t *size)
+{
+    uint32_t blocks[AX_FS_BLOCK_SIZE / sizeof(uint32_t)] = { 0 };
+
+    alloc_indirect_block(img, indirect, indirect_index);
+    write_data_into_blocks(img, sfile, blocks,
+                           sizeof(blocks) / sizeof(blocks[0]),
+                           size);
+    update_block_data(img, indirect[indirect_index],
+                      blocks, sizeof(blocks));
+}
+
+void write_data_into_2_indirect_blocks(FILE *img, FILE *sfile,
+                                       uint32_t *indirect,
+                                       uint32_t indirect_index,
+                                       size_t *size)
+{
+    uint32_t blocks[AX_FS_BLOCK_SIZE / sizeof(uint32_t)] = { 0 };
+
+    alloc_indirect_block(img, indirect, indirect_index);
+
+    for (uint32_t i = 0; i < sizeof(blocks) /
+         sizeof(blocks[0]) && *size > 0; ++i)
+    {
+        write_data_into_1_indirect_blocks(img, sfile, blocks, i, size);
+    }
+
+    update_block_data(img, indirect[indirect_index],
+                      blocks, sizeof(blocks));
+}
+
+void write_data_into_3_indirect_blocks(FILE *img, FILE *sfile,
+                                       uint32_t *indirect,
+                                       uint32_t indirect_index,
+                                       size_t *size)
+{
+    uint32_t blocks[AX_FS_BLOCK_SIZE / sizeof(uint32_t)] = { 0 };
+
+    alloc_indirect_block(img, indirect, indirect_index);
+
+    for (uint32_t i = 0; i < sizeof(blocks) /
+         sizeof(blocks[0]) && *size > 0; ++i)
+    {
+        write_data_into_2_indirect_blocks(img, sfile, blocks, i, size);
+    }
+
+    update_block_data(img, indirect[indirect_index],
+                      blocks, sizeof(blocks));
+}
+
+bool has_enough_space(size_t size)
+{
+    uint32_t required_blocks = 0;
+    uint32_t meta_blocks = 0;
+    uint32_t data_blocks = size / AX_FS_BLOCK_SIZE;
+    uint32_t indirect = AX_FS_BLOCK_SIZE % sizeof(uint32_t);
+
+    if (size % AX_FS_BLOCK_SIZE)
+        data_blocks += 1;
+
+    required_blocks = data_blocks;
+
+    if (data_blocks >= AX_FS_DIRECT_BLOCK_COUNT)
+        data_blocks -= AX_FS_DIRECT_BLOCK_COUNT;
+
+    /* 1-level indirect blocks */
+    if (data_blocks > 0)
+    {
+        meta_blocks += 1;
+
+        if (data_blocks >= indirect)
+            data_blocks -= indirect;
+        else
+            data_blocks = 0;
+    }
+
+    /* 2-level indirect blocks */
+    if (data_blocks > 0)
+    {
+        meta_blocks += 1;
+
+        for (uint32_t i = 0; i < indirect && data_blocks > 0; ++i)
+        {
+            meta_blocks += 1;
+
+            if (data_blocks >= indirect)
+                data_blocks -= indirect;
+            else
+                data_blocks = 0;
+        }
+    }
+
+    /* 3-level indirect blocks */
+    if (data_blocks > 0)
+    {
+        meta_blocks += 1;
+
+        for (uint32_t i = 0; i < indirect && data_blocks > 0; ++i)
+        {
+            meta_blocks += 1;
+
+            for (uint32_t j = 0; j < indirect && data_blocks > 0; ++j)
+            {
+                meta_blocks += 1;
+
+                if (data_blocks >= indirect)
+                    data_blocks -= indirect;
+                else
+                    data_blocks = 0;
+            }
+        }
+    }
+
+    required_blocks += meta_blocks;
+
+    return required_blocks <= super_block.s_free_blocks_count;
+}
+
 bool write_file(FILE *img, FILE *sfile, char *dst)
 {
     size_t size;
-    size_t free_size;
     uint32_t ino;
-    uint32_t block_index;
     struct ax_inode inode;
 
     ino = create_file_inode(img, dst, &inode);
@@ -714,40 +1074,37 @@ bool write_file(FILE *img, FILE *sfile, char *dst)
     size = ftell(sfile);
     fseek(sfile, 0, SEEK_SET);
 
-    free_size = super_block.s_free_blocks_count * AX_FS_BLOCK_SIZE;
-    if (free_size < size)
+    if (!has_enough_space(size))
     {
         fprintf(stderr, "There is not enough space.\n");
         return false;
     }
 
-    /* TODO: Support indirect blocks */
-    if (AX_FS_DIRECT_BLOCK_COUNT * AX_FS_BLOCK_SIZE < size)
-    {
-        fprintf(stderr, "Not support file size greater than %d.\n",
-                AX_FS_DIRECT_BLOCK_COUNT * AX_FS_BLOCK_SIZE);
-        return false;
-    }
-
-    block_index = 0;
     inode.i_size = size;
 
-    while (size > 0)
+    /* Write data into direct blocks */
+    write_data_into_blocks(img, sfile, inode.i_block,
+                           AX_FS_DIRECT_BLOCK_COUNT, &size);
+
+    /* Write 1-level indirect blocks */
+    if (size > 0)
     {
-        uint8_t data[AX_FS_BLOCK_SIZE];
-        size_t block_size = size > AX_FS_BLOCK_SIZE ? AX_FS_BLOCK_SIZE : size;
+        write_data_into_1_indirect_blocks(img, sfile, inode.i_block,
+                                          AX_FS_1_INDIRECT_BLOCK_INDEX, &size);
+    }
 
-        fread(data, 1, block_size, sfile);
+    /* Write 2-level indirect blocks */
+    if (size > 0)
+    {
+        write_data_into_2_indirect_blocks(img, sfile, inode.i_block,
+                                          AX_FS_2_INDIRECT_BLOCK_INDEX, &size);
+    }
 
-        inode.i_block[block_index] = alloc_block(img);
-        fseek(img, inode.i_block[block_index] * AX_FS_BLOCK_SIZE, SEEK_SET);
-        fwrite(data, 1, block_size, img);
-
-        update_block_bitmap(img, inode.i_block[block_index]);
-        super_block.s_free_blocks_count -= 1;
-
-        block_index += 1;
-        size -= block_size;
+    /* Write 3-level indirect blocks */
+    if (size > 0)
+    {
+        write_data_into_3_indirect_blocks(img, sfile, inode.i_block,
+                                          AX_FS_3_INDIRECT_BLOCK_INDEX, &size);
     }
 
     update_inode(img, ino, &inode);
